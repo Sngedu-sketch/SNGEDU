@@ -67,14 +67,17 @@ create table if not exists public.course_enrollments (
 -- ============================================================
 
 alter table public.sepay_orders enable row level security;
+drop policy if exists "orders_select_own" on public.sepay_orders;
 create policy "orders_select_own" on public.sepay_orders
   for select using (auth.uid() = user_id);
 
 alter table public.subscriptions enable row level security;
+drop policy if exists "subscriptions_select_own" on public.subscriptions;
 create policy "subscriptions_select_own" on public.subscriptions
   for select using (auth.uid() = user_id);
 
 alter table public.course_enrollments enable row level security;
+drop policy if exists "enrollments_select_own" on public.course_enrollments;
 create policy "enrollments_select_own" on public.course_enrollments
   for select using (auth.uid() = user_id);
 

@@ -7,6 +7,34 @@
 -- ============================================================
 
 -- ----------------------------------------------------------------
+-- 0. site_settings — kho cấu hình dạng key/payload(jsonb) dùng CHUNG cho
+--    toàn site (hero trang chủ, theme, footer, nav_tabs, usage_limits,
+--    payment_settings, email_settings, site_maintenance, support_content,
+--    product_content, doc_content, tool_content, home_featured...).
+--    Bảng này chưa từng có migration nào tạo (cũng được thêm thủ công trên
+--    DB gốc trước đó) — mọi thứ từ 0004 trở đi đều cần nên phải tạo ở đây.
+--    Đọc: công khai (trang chủ hiển thị không cần đăng nhập).
+--    Ghi: chỉ admin (qua trang quản trị, RLS check profiles.role='admin').
+-- ----------------------------------------------------------------
+create table if not exists public.site_settings (
+  key text primary key,
+  payload jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.site_settings enable row level security;
+
+drop policy if exists "site_settings_public_read" on public.site_settings;
+create policy "site_settings_public_read" on public.site_settings
+  for select using (true);
+
+drop policy if exists "site_settings_admin_write" on public.site_settings;
+create policy "site_settings_admin_write" on public.site_settings
+  for all
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+
+-- ----------------------------------------------------------------
 -- 1. Đảm bảo bảng feedback tồn tại với đúng các cột cũ đang dùng
 --    (id, user_id, email, full_name, message, page_url, status, admin_note, created_at, updated_at)
 -- ----------------------------------------------------------------

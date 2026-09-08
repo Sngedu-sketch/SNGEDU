@@ -7,6 +7,19 @@
 -- ============================================================
 
 -- ------------------------------------------------------------
+-- 0) profiles.role — PHÂN QUYỀN ADMIN (user thường / admin)
+-- ------------------------------------------------------------
+-- Migration 0002 mới chỉ tạo profiles.balance, CHƯA có cột role — nhưng từ
+-- phần dưới của file này trở đi (và các file 0004→0016 sau này) đều cần
+-- profiles.role để kiểm tra quyền admin, nên phải thêm ở đây trước khi dùng.
+-- Mặc định mọi user là 'user'; muốn cấp quyền admin cho ai thì chạy tay:
+--   update public.profiles set role = 'admin' where id = '<uuid-cua-user-do>';
+alter table public.profiles add column if not exists role text not null default 'user';
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check check (role in ('user','admin'));
+create index if not exists idx_profiles_role on public.profiles (role);
+
+-- ------------------------------------------------------------
 -- 1) MÃ GIẢM GIÁ (coupons)
 -- ------------------------------------------------------------
 create table if not exists public.coupons (
@@ -35,6 +48,7 @@ alter table public.coupons enable row level security;
 -- để tránh lộ danh sách mã ra ngoài — việc kiểm tra/áp dụng mã đi qua Edge Function
 -- (sepay-validate-coupon, sepay-create-checkout) chạy bằng service_role nên bỏ qua RLS.
 -- Chỉ admin (profiles.role = 'admin') được thao tác trực tiếp từ trang quản trị.
+drop policy if exists "coupons_admin_all" on public.coupons;
 create policy "coupons_admin_all" on public.coupons
   for all
   using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'))
@@ -66,15 +80,18 @@ create index if not exists idx_referrals_referrer on public.referrals (referrer_
 alter table public.referrals enable row level security;
 
 -- User xem được các dòng liên quan tới chính mình (mình là người giới thiệu HOẶC được giới thiệu)
+drop policy if exists "referrals_select_own" on public.referrals;
 create policy "referrals_select_own" on public.referrals
   for select using (auth.uid() = referrer_id or auth.uid() = referred_id);
 
 -- User mới được phép TỰ tạo 1 dòng referral duy nhất ngay sau khi đăng ký (referred_id = chính mình),
 -- không được tự ý sửa/xoá hay tự thưởng — việc update status/reward chỉ Edge Function (sepay-ipn) làm bằng service_role.
+drop policy if exists "referrals_insert_own" on public.referrals;
 create policy "referrals_insert_own" on public.referrals
   for insert with check (auth.uid() = referred_id and referrer_id <> referred_id);
 
 -- Admin xem toàn bộ để theo dõi hiệu quả chương trình giới thiệu
+drop policy if exists "referrals_admin_select_all" on public.referrals;
 create policy "referrals_admin_select_all" on public.referrals
   for select using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
 
