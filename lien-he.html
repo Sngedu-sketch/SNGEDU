@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<script src="assets/js/supabase-config.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f6f3ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
+<script>
+    try{
+        var savedTheme = localStorage.getItem('sng-theme');
+        if(savedTheme === 'dark' || savedTheme === 'light'){
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }else{
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    }catch(e){}
+</script>
+<title>Liên hệ Admin · SNG EDU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,500;1,600&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+    :root{
+        --bg:        #f6f3ea;
+        --card:      #fffdf8;
+        --stub:      #fbf6ea;
+        --line:      rgba(28,31,43,.14);
+        --dot:       rgba(28,31,43,.07);
+        --ink:       #1c1f2b;
+        --ink-soft:  #6b6f80;
+        --ink-mute:  #9a9db0;
+        --gold:      #a8681a;
+        --gold-bg:   #f4e2c1;
+        --green:     #0f8f60;
+        --green-bg:  #d7f1e4;
+        --amber:     #b8691a;
+        --amber-bg:  #f6e6cf;
+        --shadow:    0 1px 2px rgba(28,20,10,.05), 0 26px 50px -24px rgba(28,20,10,.22);
+    }
+    html[data-theme="dark"]{
+        --bg:        #0f1117;
+        --card:      #191c26;
+        --stub:      #12141d;
+        --line:      rgba(255,255,255,.13);
+        --dot:       rgba(255,255,255,.05);
+        --ink:       #f3f1e7;
+        --ink-soft:  #a2a6ba;
+        --ink-mute:  #5d6178;
+        --gold:      #eab655;
+        --gold-bg:   rgba(234,182,85,.14);
+        --green:     #3ddb9a;
+        --green-bg:  rgba(61,219,154,.14);
+        --amber:     #eab655;
+        --amber-bg:  rgba(234,182,85,.12);
+        --shadow:    0 1px 2px rgba(0,0,0,.3), 0 30px 60px -24px rgba(0,0,0,.65);
+    }
+    html{ transition: background 0.38s ease; width:100%; overflow-x:hidden; }
+    *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    body, header{ transition: background 0.38s ease, border-color 0.38s ease, color 0.38s ease; }
+    body{
+        background-color: var(--bg);
+        background-image: radial-gradient(var(--dot) 1.4px, transparent 1.4px);
+        background-size: 22px 22px;
+        color: var(--ink);
+        font-family:'Be Vietnam Pro', sans-serif; min-height:100vh; line-height:1.6;
+        width:100%; overflow-x:hidden; position:relative;
+    }
+    @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+    a{ color:inherit; }
+
+    /* ---------------- header ---------------- */
+    header{
+        background:color-mix(in srgb, var(--card) 82%, transparent); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+        height:64px; display:flex; align-items:center; gap:10px;
+        padding:0 clamp(14px, 4vw, 24px); border-bottom:1px solid var(--line);
+        padding-left:max(14px, env(safe-area-inset-left)); padding-right:max(14px, env(safe-area-inset-right));
+        position:fixed; top:0; width:100%; z-index:1000;
+    }
+    .back-btn, .theme-toggle{
+        width:40px; height:40px; min-width:40px; min-height:40px; aspect-ratio:1/1;
+        border-radius:50%; border:1px solid var(--line); background:var(--card);
+        display:flex; align-items:center; justify-content:center;
+        cursor:pointer; flex-shrink:0; text-decoration:none; padding:0; line-height:0;
+        transition:background .25s ease, transform .2s ease, color .25s ease, border-color .25s ease;
+    }
+    .back-btn{ color:var(--ink); }
+    .back-btn svg{ width:19px; height:19px; display:block; }
+    .theme-toggle{ color:var(--ink-soft); }
+    .theme-toggle svg{ width:19px; height:19px; display:block; }
+    @media (hover:hover){
+        .back-btn:hover{ background:var(--gold-bg); color:var(--gold); border-color:var(--gold-bg); }
+        .theme-toggle:hover{ background:var(--gold-bg); color:var(--gold); border-color:var(--gold-bg); }
+    }
+    .back-btn:active, .theme-toggle:active{ transform:scale(.9); }
+    .header-title{
+        font-weight:700; color:var(--ink); font-size:.98rem; flex:1; min-width:0;
+        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .theme-toggle .ic-sun{ display:none; }
+    html[data-theme="dark"] .theme-toggle .ic-sun{ display:block; }
+    html[data-theme="dark"] .theme-toggle .ic-moon{ display:none; }
+
+    /* ---------------- wrap ---------------- */
+    .lh-screen{
+        max-width:560px; width:100%; margin:0 auto; position:relative; z-index:1;
+        padding:100px clamp(16px, 4vw, 28px) 60px;
+        padding-left:max(clamp(16px, 4vw, 28px), env(safe-area-inset-left));
+        padding-right:max(clamp(16px, 4vw, 28px), env(safe-area-inset-right));
+        padding-bottom:max(60px, env(safe-area-inset-bottom));
+    }
+
+    .state-card{
+        background:var(--card); border:1px solid var(--line); border-radius:20px;
+        padding:60px 24px; text-align:center; color:var(--ink-soft); font-size:.92rem;
+    }
+    .state-card i{ font-size:1.8rem; color:var(--ink-mute); margin-bottom:14px; display:block; }
+    .state-card.is-error i{ color:var(--amber); }
+
+    @keyframes tkFadeUp{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:translateY(0); } }
+
+    /* ================= VÉ MỜI LIÊN HỆ ================= */
+    .ticket{
+        position:relative;
+        animation:tkFadeUp .55s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .ticket-main{
+        background:var(--card); border:1px solid var(--line); border-bottom:none;
+        border-radius:26px 26px 0 0; box-shadow:var(--shadow);
+        padding:30px 28px 26px; position:relative;
+    }
+    .ticket-eyebrow{
+        display:inline-flex; align-items:center; gap:9px;
+        font-size:.68rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+        color:var(--gold); margin-bottom:22px;
+    }
+    .ticket-eyebrow::before{ content:''; width:16px; height:1px; background:var(--gold); }
+
+    .ticket-person{ display:flex; align-items:center; gap:16px; margin-bottom:18px; }
+    .stamp-avatar{
+        width:72px; height:72px; border-radius:50%; flex-shrink:0; padding:3px;
+        background:repeating-conic-gradient(var(--gold) 0deg 9deg, transparent 9deg 20deg);
+    }
+    .stamp-avatar-inner{
+        width:100%; height:100%; border-radius:50%; overflow:hidden;
+        background:var(--gold-bg); display:flex; align-items:center; justify-content:center;
+        border:3px solid var(--card);
+    }
+    .stamp-avatar-inner img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .stamp-avatar-inner i{ font-size:1.55rem; color:var(--gold); }
+
+    .ticket-id{ min-width:0; }
+    .ticket-name{
+        font-family:'Fraunces', serif; font-style:italic; font-weight:600;
+        font-size:1.5rem; letter-spacing:-.01em; color:var(--ink); line-height:1.15; margin-bottom:7px;
+        overflow-wrap:break-word;
+    }
+    .ticket-role{ display:inline-flex; align-items:center; gap:7px; font-size:.8rem; font-weight:600; color:var(--ink-soft); }
+    .ticket-role .dot{
+        width:7px; height:7px; border-radius:50%; background:var(--green); flex-shrink:0;
+        box-shadow:0 0 0 3px var(--green-bg); animation:dotPulse 2.4s ease-in-out infinite;
+    }
+    @keyframes dotPulse{ 0%,100%{ box-shadow:0 0 0 3px var(--green-bg);} 50%{ box-shadow:0 0 0 6px var(--green-bg);} }
+
+    .ticket-bio{ color:var(--ink-soft); font-size:.9rem; line-height:1.75; white-space:pre-line; overflow-wrap:break-word; }
+
+    /* perforation seam giữa 2 nửa vé */
+    .ticket-perf{ position:relative; height:0; z-index:2; }
+    .ticket-perf::before{
+        content:''; position:absolute; left:30px; right:30px; top:-1px;
+        border-top:1.5px dashed var(--line);
+    }
+    .notch{ position:absolute; top:0; width:22px; height:22px; border-radius:50%; background:var(--bg); transform:translateY(-50%); }
+    .notch-l{ left:-11px; }
+    .notch-r{ right:-11px; }
+
+    .ticket-stub{
+        background:var(--stub); border:1px solid var(--line); border-top:none;
+        border-radius:0 0 26px 26px; box-shadow:var(--shadow);
+        padding:22px 28px 26px;
+    }
+    .stub-label{
+        font-size:.68rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+        color:var(--ink-mute); margin-bottom:14px;
+    }
+    .stub-rows{ display:flex; flex-direction:column; gap:10px; }
+    .stub-row{
+        display:flex; align-items:center; gap:13px; text-decoration:none; color:var(--ink);
+        padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:var(--card);
+        transition:transform .2s ease, border-color .2s ease, background .2s ease;
+        opacity:0; animation:tkFadeUp .45s cubic-bezier(.2,.8,.2,1) both;
+    }
+    @media (hover:hover){
+        .stub-row:hover{ transform:translateX(3px); border-color:var(--gold); background:var(--gold-bg); }
+    }
+    .stub-row:active{ transform:scale(.98); }
+    .stub-ic{
+        width:38px; height:38px; border-radius:10px; flex-shrink:0;
+        display:flex; align-items:center; justify-content:center; font-size:1rem;
+        background:var(--gold-bg); color:var(--gold);
+    }
+    .stub-txt{ min-width:0; flex:1; }
+    .stub-lbl{ font-size:.7rem; color:var(--ink-mute); margin-bottom:2px; }
+    .stub-val{ font-size:.92rem; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .stub-arrow{ color:var(--ink-mute); font-size:.8rem; flex-shrink:0; transition:transform .2s ease, color .2s ease; }
+    @media (hover:hover){ .stub-row:hover .stub-arrow{ color:var(--gold); transform:translate(2px,-2px); } }
+
+    .stub-note{
+        display:flex; align-items:flex-start; gap:9px; margin-top:18px;
+        font-size:.8rem; line-height:1.65; color:var(--ink-soft); text-align:left;
+    }
+    .stub-note i{ color:var(--gold); margin-top:2px; flex-shrink:0; }
+
+    .barcode{
+        margin-top:22px; height:26px; border-radius:3px; opacity:.5;
+        background:repeating-linear-gradient(90deg,
+            var(--ink) 0 1px, transparent 1px 3px,
+            var(--ink) 3px 4px, transparent 4px 9px,
+            var(--ink) 9px 10px, transparent 10px 12px,
+            var(--ink) 12px 14px, transparent 14px 19px);
+    }
+    html[data-theme="dark"] .barcode{ opacity:.32; }
+    .ticket-code{
+        margin-top:8px; font-size:.66rem; letter-spacing:.1em; color:var(--ink-mute); text-align:center;
+        font-family:'Be Vietnam Pro', monospace;
+    }
+
+    footer{ text-align:center; color:var(--ink-mute); font-size:.78rem; padding:34px 0 4px; }
+</style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/js/track-visit.js"></script>
+<script src="assets/js/ctv-track.js"></script>
+
+<header>
+    <a href="javascript:void(0)" class="back-btn" id="backBtn" aria-label="Quay lại">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    </a>
+    <div class="header-title"></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Đổi giao diện sáng/tối" type="button">
+        <svg class="ic-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 14.7A8.5 8.5 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1Z"/></svg>
+        <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>
+    </button>
+</header>
+
+<div class="lh-screen">
+    <div id="content"><div class="state-card"><i class="fa-solid fa-spinner fa-spin"></i>Đang tải...</div></div>
+    <footer id="siteFooter">SNG © H.N.TấnHải · sngedu.site</footer>
+</div>
+
+<script>
+const SUPABASE_URL = window.SNG_SUPABASE_URL;
+const SUPABASE_ANON_KEY = window.SNG_SUPABASE_ANON_KEY;
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+document.getElementById('backBtn').addEventListener('click', () => {
+    if (document.referrer && history.length > 1){ history.back(); }
+    else { location.href = 'index.html'; }
+});
+
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.addEventListener('click', ()=>{
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try{ localStorage.setItem('sng-theme', next); }catch(e){}
+});
+
+function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showState(html, isError){
+    document.getElementById('content').innerHTML = `<div class="state-card${isError ? ' is-error' : ''}">${html}</div>`;
+}
+
+// ---------------- CHÂN TRANG — đọc từ Supabase site_settings, đồng bộ với các trang khác ----------------
+async function loadFooterSettings(){
+    const el = document.getElementById('siteFooter');
+    try{
+        const { data, error } = await sb.from('site_settings').select('*').eq('key', 'site_footer').single();
+        if (error || !data || !data.payload || !data.payload.text){ if (el) el.textContent = ''; return; }
+        if (el) el.textContent = data.payload.text;
+    }catch(e){ if (el) el.textContent = ''; }
+}
+
+// ---------------- Nội dung trang: đọc từ site_settings 'admin_contact' — cấu hình trong Admin > Cài đặt chung ----------------
+async function loadAdminContactPage(){
+    try{
+        const { data, error } = await sb.from('site_settings').select('*').eq('key', 'admin_contact').single();
+        const payload = (!error && data && data.payload) ? data.payload : null;
+
+        if (!payload || !(payload.name || '').trim()){
+            showState(`<i class="fa-solid fa-circle-info"></i>Trang liên hệ chưa được cấu hình.<br>Vui lòng quay lại <a href="index.html" style="color:var(--gold);font-weight:700;text-decoration:none;">trang chủ</a>.`, true);
+            return;
+        }
+
+        const avatarHtml = payload.avatar
+            ? `<img src="${escapeHtml(payload.avatar)}" alt="${escapeHtml(payload.name || '')}">`
+            : `<i class="fa-solid fa-user-tie"></i>`;
+
+        const roleText = (payload.role || '').trim();
+        const roleHtml = `<span class="ticket-role"><span class="dot"></span>${roleText ? escapeHtml(roleText) : 'Đang hoạt động'}</span>`;
+
+        const bioHtml = (payload.bio || '').trim()
+            ? `<p class="ticket-bio">${escapeHtml(payload.bio)}</p>`
+            : '';
+
+        const contacts = Array.isArray(payload.contacts) ? payload.contacts.filter(c => c && (c.value || c.link)) : [];
+        const contactsHtml = contacts.length ? contacts.map((c, i) => {
+            const icon = (c.icon || '').trim() || 'fa-solid fa-link';
+            const label = escapeHtml(c.label || '');
+            const value = escapeHtml(c.value || c.link || '');
+            const link = (c.link || '').trim();
+            const color = (c.color || '').trim();
+            const tag = link ? 'a' : 'div';
+            const attrs = link ? `href="${escapeHtml(link)}" target="_blank" rel="noopener"` : '';
+            const badgeStyle = color ? ` style="background:${escapeHtml(color)}1a;color:${escapeHtml(color)};"` : '';
+            return `<${tag} class="stub-row" ${attrs} style="animation-delay:${.1 + i * .06}s">
+                        <span class="stub-ic"${badgeStyle}><i class="${escapeHtml(icon)}"></i></span>
+                        <span class="stub-txt">
+                            ${label ? `<span class="stub-lbl">${label}</span>` : ''}
+                            <span class="stub-val">${value}</span>
+                        </span>
+                        ${link ? '<i class="fa-solid fa-arrow-up-right-from-square stub-arrow"></i>' : ''}
+                    </${tag}>`;
+        }).join('') : '';
+
+        const noteHtml = (payload.note || '').trim()
+            ? `<div class="stub-note"><i class="fa-solid fa-circle-info"></i><span>${escapeHtml(payload.note)}</span></div>`
+            : '';
+
+        document.getElementById('content').innerHTML = `
+            <div class="ticket">
+                <div class="ticket-main">
+                    <div class="ticket-eyebrow">Vé mời liên hệ</div>
+                    <div class="ticket-person">
+                        <div class="stamp-avatar"><div class="stamp-avatar-inner">${avatarHtml}</div></div>
+                        <div class="ticket-id">
+                            <div class="ticket-name">${escapeHtml(payload.name || '')}</div>
+                            ${roleHtml}
+                        </div>
+                    </div>
+                    ${bioHtml}
+                </div>
+                <div class="ticket-perf"><span class="notch notch-l"></span><span class="notch notch-r"></span></div>
+                <div class="ticket-stub">
+                    ${contactsHtml ? `<div class="stub-label">Kênh kết nối</div><div class="stub-rows">${contactsHtml}</div>` : ''}
+                    ${noteHtml}
+                    <div class="barcode"></div>
+                    <div class="ticket-code">SNG · EDU · ${(payload.name || 'ADMIN').toUpperCase().replace(/[^A-Z0-9]+/g,'').slice(0,10) || 'ADMIN'}</div>
+                </div>
+            </div>`;
+    }catch(e){
+        showState(`<i class="fa-solid fa-triangle-exclamation"></i>Không tải được trang. Vui lòng thử lại sau.`, true);
+    }
+}
+
+loadFooterSettings();
+loadAdminContactPage();
+</script>
+</body>
+</html>

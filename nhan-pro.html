@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<script src="assets/js/supabase-config.js"></script>
+<!-- Kiểm tra chế độ bảo trì (Admin > Bảo trì) trước khi hiện trang -->
+<script src="assets/js/maintenance-check.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f5f7fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f111a" media="(prefers-color-scheme: dark)">
+<script>
+    try{
+        var savedTheme = localStorage.getItem('sng-theme');
+        if(savedTheme === 'dark' || savedTheme === 'light'){
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }else{
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    }catch(e){}
+</script>
+<title>Nhận Pro miễn phí · SNG EDU</title>
+<meta name="description" content="Không cần trả phí — đổi tài liệu, báo lỗi hoặc giới thiệu bạn bè để nhận Premium miễn phí trên SNG EDU.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://sngedu.site/nhan-pro.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SNG EDU">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Nhận Pro miễn phí · SNG EDU">
+<meta property="og:description" content="Không cần trả phí — đổi tài liệu, báo lỗi hoặc giới thiệu bạn bè để nhận Premium miễn phí trên SNG EDU.">
+<meta property="og:url" content="https://sngedu.site/nhan-pro.html">
+<meta property="og:image" content="https://sngedu.site/assets/og-image.png">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<script src="assets/js/pwa-register.js" defer></script>
+
+<style>
+    :root{
+        --bg:        #f5f7fb;
+        --panel:     #eef1f8;
+        --line:      #e1e5f0;
+        --ink:       #1c2033;
+        --ink-soft:  #5c6272;
+        --ink-mute:  #8790a6;
+        --brand:     #4f6bff;
+        --brand2:    #8b5cf6;
+        --brand-bg:  #eaedff;
+        --green:     #17b26a;
+        --amber:     #d78a11;
+        --red:       #e5484d;
+        --indigo:    #6a5cd6;
+        --blue:      #0068ff;
+        --purple:    #a233c9;
+    }
+    html[data-theme="dark"]{
+        --bg:        #0f111a;
+        --panel:     #171a26;
+        --line:      #262a3a;
+        --ink:       #f1f2f8;
+        --ink-soft:  #9ba1b8;
+        --ink-mute:  #676d84;
+        --brand:     #7b93ff;
+        --brand2:    #a78bfa;
+        --brand-bg:  #202748;
+        --green:     #2ed392;
+        --amber:     #ffbd4a;
+        --red:       #ff7875;
+        --indigo:    #9a90ff;
+        --blue:      #5aa9ff;
+        --purple:    #d68cff;
+    }
+    html{ transition: background 0.38s ease; width:100%; overflow-x:hidden; }
+    *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    body, header{ transition: background 0.38s ease, border-color 0.38s ease, color 0.38s ease; }
+    body{
+        background: var(--bg); color: var(--ink);
+        font-family:'Be Vietnam Pro', sans-serif; min-height:100vh; line-height:1.65;
+        width:100%; overflow-x:hidden;
+    }
+    @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+    a{ color:inherit; }
+
+    /* ---------------- header ---------------- */
+    header{
+        background:transparent; height:60px; display:flex; align-items:center; gap:10px;
+        padding:0 clamp(16px, 4vw, 28px);
+        padding-left:max(16px, env(safe-area-inset-left));
+        padding-right:max(16px, env(safe-area-inset-right));
+        max-width:640px; width:100%; margin:0 auto; position:relative; z-index:2;
+    }
+    .back-btn{
+        display:inline-flex; align-items:center; gap:7px; color:var(--ink-soft);
+        text-decoration:none; font-size:.88rem; font-weight:600; cursor:pointer;
+        padding:6px 4px; margin-left:-4px; transition:color .2s ease;
+    }
+    .back-btn svg{ width:16px; height:16px; display:block; }
+    .back-btn:hover{ color:var(--brand); }
+    .theme-toggle{
+        margin-left:auto; width:36px; height:36px; min-width:36px; border-radius:50%;
+        border:1px solid var(--line); background:var(--panel); color:var(--ink-soft);
+        display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+        transition:background .25s ease, color .25s ease, border-color .25s ease;
+    }
+    .theme-toggle svg{ width:16px; height:16px; display:block; }
+    .theme-toggle:hover{ background:var(--brand-bg); color:var(--brand); border-color:var(--brand-bg); }
+    .theme-toggle:active{ transform:scale(.92); }
+    .theme-toggle .ic-sun{ display:none; }
+    html[data-theme="dark"] .theme-toggle .ic-sun{ display:block; }
+    html[data-theme="dark"] .theme-toggle .ic-moon{ display:none; }
+
+    /* ---------------- wrap ---------------- */
+    .ep-screen{
+        max-width:640px; width:100%; margin:0 auto;
+        padding:8px clamp(16px, 4vw, 28px) 60px;
+        padding-left:max(clamp(16px, 4vw, 28px), env(safe-area-inset-left));
+        padding-right:max(clamp(16px, 4vw, 28px), env(safe-area-inset-right));
+        padding-bottom:max(60px, env(safe-area-inset-bottom));
+    }
+
+    .state-card{
+        padding:60px 4px; text-align:center; color:var(--ink-soft); font-size:.92rem;
+    }
+    .state-card i{ font-size:1.6rem; color:var(--ink-mute); margin-bottom:14px; display:block; }
+    .state-card.is-error i{ color:var(--amber); }
+
+    @keyframes epFadeUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+
+    /* ---------------- hero ---------------- */
+    .ep-hero{ margin:22px 0 34px; animation:epFadeUp .45s ease both; }
+    .ep-hero-badge{
+        display:inline-flex; align-items:center; gap:6px; color:var(--brand); font-size:.78rem; font-weight:700;
+        margin-bottom:12px;
+    }
+    .ep-hero h1{
+        font-weight:800; font-size:clamp(1.5rem, 5.5vw, 1.95rem); letter-spacing:-.01em;
+        color:var(--ink); line-height:1.28; margin-bottom:10px;
+    }
+    .ep-hero p{ color:var(--ink-mute); font-size:.92rem; font-style:italic; line-height:1.65; }
+
+    /* ---------------- program sections ---------------- */
+    .ep-programs{ display:flex; flex-direction:column; }
+    .ep-sec{
+        padding:22px 0; border-top:1px solid var(--line);
+        opacity:0; animation:epFadeUp .45s ease both;
+    }
+    .ep-sec:first-child{ border-top:1px solid var(--line); }
+    .ep-sec-head{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .ep-sec-head i{ font-size:.92rem; width:20px; text-align:center; flex-shrink:0; }
+    .ep-sec-head h2{ font-size:1.04rem; font-weight:800; color:var(--ink); }
+    .ep-bullets{ list-style:none; display:flex; flex-direction:column; gap:9px; }
+    .ep-bullets li{
+        position:relative; padding-left:20px; color:var(--ink-soft); font-size:.92rem; line-height:1.65;
+    }
+    .ep-bullets li::before{
+        content:''; position:absolute; left:2px; top:.65em; width:5px; height:5px; border-radius:50%;
+        background:var(--ink-mute);
+    }
+    .ep-bullets li.is-reward{ color:var(--ink); font-weight:700; }
+    .ep-bullets li.is-reward::before{ display:none; }
+    .ep-bullets li.is-reward i{ margin-right:7px; font-size:.82rem; }
+    .ep-sec-link{
+        display:inline-flex; align-items:center; gap:6px; margin-top:12px; margin-left:20px;
+        font-size:.85rem; font-weight:700; color:var(--brand); text-decoration:none;
+    }
+    .ep-sec-link:hover{ text-decoration:underline; }
+    .ep-sec-link i{ font-size:.7rem; }
+
+    .ep-ic-green{ color:var(--green); }
+    .ep-ic-red{ color:var(--red); }
+    .ep-ic-indigo{ color:var(--indigo); }
+    .ep-ic-amber{ color:var(--amber); }
+    .ep-ic-blue{ color:var(--blue); }
+    .ep-ic-purple{ color:var(--purple); }
+
+    /* ---------------- zalo contact box ---------------- */
+    .ep-zalo{
+        margin-top:26px; background:var(--panel); border:1px solid var(--line); border-radius:16px;
+        padding:22px 22px 24px; opacity:0; animation:epFadeUp .45s ease both;
+    }
+    .ep-zalo p{ color:var(--ink-soft); font-size:.9rem; line-height:1.6; margin-bottom:16px; }
+    .ep-zalo-phone{
+        display:inline-flex; align-items:center; gap:8px; font-family:'Be Vietnam Pro', monospace;
+        font-size:1.05rem; font-weight:800; color:var(--ink); background:var(--bg);
+        border:1px solid var(--line); border-radius:10px; padding:8px 14px; margin-bottom:14px;
+        letter-spacing:.02em;
+    }
+    .ep-zalo-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+    .ep-zalo-btn{
+        display:inline-flex; align-items:center; gap:10px; text-decoration:none;
+        padding:9px 20px 9px 9px; border-radius:99px; font-weight:700; font-size:.86rem;
+        background:var(--brand); color:#fff; border:none; cursor:pointer;
+        transition:transform .2s ease, opacity .2s ease;
+    }
+    .ep-zalo-btn:hover{ opacity:.92; }
+    .ep-zalo-btn:active{ transform:scale(.97); }
+    .ep-zalo-btn.secondary{ background:var(--bg); color:var(--ink); border:1px solid var(--line); padding:11px 20px; }
+    .ep-zalo-btn.secondary:hover{ border-color:var(--brand); color:var(--brand); opacity:1; }
+    .ep-zalo-btn.zalo{ background:#0068ff; }
+    .ep-zalo-icon{
+        display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+        width:26px; height:26px; border-radius:50%; background:#fff; overflow:hidden;
+    }
+    .ep-zalo-icon svg{ width:100%; height:100%; display:block; }
+    .ep-zalo-copied{ font-size:.76rem; color:var(--green); font-weight:700; margin-top:10px; opacity:0; transition:opacity .2s ease; height:14px; }
+    .ep-zalo-copied.show{ opacity:1; }
+
+    footer{ text-align:center; color:var(--ink-mute); font-size:.78rem; padding:34px 0 4px; }
+</style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/js/track-visit.js"></script>
+<script src="assets/js/ctv-track.js"></script>
+
+<header>
+    <a href="javascript:void(0)" class="back-btn" id="backBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        Quay lại
+    </a>
+    <button class="theme-toggle" id="themeToggle" aria-label="Đổi giao diện sáng/tối" type="button">
+        <svg class="ic-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 14.7A8.5 8.5 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1Z"/></svg>
+        <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>
+    </button>
+</header>
+
+<div class="ep-screen">
+    <div id="content"><div class="state-card"><i class="fa-solid fa-spinner fa-spin"></i>Đang tải...</div></div>
+    <footer id="siteFooter">SNG © H.N.TấnHải · sngedu.site</footer>
+</div>
+
+<script>
+const SUPABASE_URL = window.SNG_SUPABASE_URL;
+const SUPABASE_ANON_KEY = window.SNG_SUPABASE_ANON_KEY;
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+document.getElementById('backBtn').addEventListener('click', () => {
+    if (document.referrer && history.length > 1){ history.back(); }
+    else { location.href = 'index.html'; }
+});
+
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.addEventListener('click', ()=>{
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try{ localStorage.setItem('sng-theme', next); }catch(e){}
+});
+
+function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showState(html, isError){
+    document.getElementById('content').innerHTML = `<div class="state-card${isError ? ' is-error' : ''}">${html}</div>`;
+}
+
+// ---------------- CHÂN TRANG — đọc từ Supabase site_settings, đồng bộ với các trang khác ----------------
+async function loadFooterSettings(){
+    const el = document.getElementById('siteFooter');
+    try{
+        const { data, error } = await sb.from('site_settings').select('*').eq('key', 'site_footer').single();
+        if (error || !data || !data.payload || !data.payload.text){ if (el) el.textContent = ''; return; }
+        if (el) el.textContent = data.payload.text;
+    }catch(e){ if (el) el.textContent = ''; }
+}
+
+const DEFAULT_EARN_PRO_CONTENT = {
+    intro_title: 'Nhận Pro miễn phí',
+    intro_desc: 'Không cần trả phí — tham gia một trong các chương trình dưới đây, được duyệt là nhận Premium ngay.',
+    zalo_phone: '0825160035',
+    zalo_link: 'https://zalo.me/0825160035',
+    items: [
+        { id:'ep1', icon:'fa-solid fa-file-arrow-up', color:'green',  title:'Đổi tài liệu lấy Pro', desc:'Gửi tài liệu học tập chất lượng (đề thi, tóm tắt, slide bài giảng...) mà hệ thống chưa có. Nhắn Zalo kèm file để được duyệt.', reward:'+15 ngày Pro / tài liệu', link:'' },
+        { id:'ep2', icon:'fa-solid fa-bug',            color:'red',    title:'Tìm lỗi lấy Pro',     desc:'Phát hiện câu hỏi sai, đáp án sai, lỗi giao diện hoặc lỗi chức năng trên web. Chụp ảnh màn hình và nhắn Zalo mô tả lỗi.', reward:'+7 ngày Pro / lỗi hợp lệ', link:'' },
+        { id:'ep3', icon:'fa-solid fa-user-plus',      color:'indigo', title:'Giới thiệu nhận Pro', desc:'Giới thiệu bạn bè tạo tài khoản và sử dụng SNG EDU. Nhắn Zalo kèm tên tài khoản của bạn và của người được giới thiệu.', reward:'+10 ngày Pro / lượt giới thiệu', link:'' }
+    ]
+};
+const EP_COLORS = ['green','red','indigo','amber','blue','purple'];
+
+function epCardHtml(item, idx){
+    const color = EP_COLORS.includes(item.color) ? item.color : 'indigo';
+    const icon = item.icon || 'fa-solid fa-gift';
+    const reward = (item.reward || '').trim();
+    const link = (item.link || '').trim();
+    return `
+        <div class="ep-sec" style="animation-delay:${.05 + idx * .06}s">
+            <div class="ep-sec-head">
+                <i class="${escapeHtml(icon)} ep-ic-${color}"></i>
+                <h2>${escapeHtml(item.title || '')}</h2>
+            </div>
+            <ul class="ep-bullets">
+                ${item.desc ? `<li>${escapeHtml(item.desc)}</li>` : ''}
+                ${reward ? `<li class="is-reward"><i class="fa-solid fa-crown ep-ic-${color}"></i>${escapeHtml(reward)}</li>` : ''}
+            </ul>
+            ${link ? `<a class="ep-sec-link" href="${escapeHtml(link)}" target="_blank" rel="noopener">Tìm hiểu thêm <i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : ''}
+        </div>`;
+}
+
+async function loadEarnProPage(){
+    try{
+        const { data, error } = await sb.from('site_settings').select('*').eq('key', 'earn_pro_content').single();
+        const payload = (!error && data && data.payload) ? data.payload : DEFAULT_EARN_PRO_CONTENT;
+
+        const items = Array.isArray(payload.items) ? payload.items.filter(it => it && !it.hidden) : [];
+        const zaloPhone = (payload.zalo_phone || DEFAULT_EARN_PRO_CONTENT.zalo_phone || '').trim();
+        const zaloLink = (payload.zalo_link || DEFAULT_EARN_PRO_CONTENT.zalo_link || '').trim();
+
+        const heroHtml = `
+            <div class="ep-hero">
+                <span class="ep-hero-badge"><i class="fa-solid fa-gift"></i> Chương trình đặc biệt</span>
+                <h1>${escapeHtml(payload.intro_title || DEFAULT_EARN_PRO_CONTENT.intro_title)}</h1>
+                <p>${escapeHtml(payload.intro_desc || DEFAULT_EARN_PRO_CONTENT.intro_desc)}</p>
+            </div>`;
+
+        const programsHtml = items.length
+            ? `<div class="ep-programs">${items.map(epCardHtml).join('')}</div>`
+            : `<div class="state-card"><i class="fa-solid fa-circle-info"></i>Hiện chưa có chương trình nào đang mở. Quay lại sau nhé.</div>`;
+
+        const zaloHtml = (zaloPhone || zaloLink) ? `
+            <div class="ep-zalo" style="animation-delay:${.05 + items.length * .06 + .05}s">
+                <p>Để tham gia chương trình, nhắn tin với đội ngũ SNG EDU qua Zalo để được xác nhận và cộng Pro trực tiếp vào tài khoản của bạn.</p>
+                ${zaloPhone ? `<div class="ep-zalo-phone"><i class="fa-solid fa-phone"></i> ${escapeHtml(zaloPhone)}</div>` : ''}
+                <div class="ep-zalo-actions">
+                    ${zaloLink ? `<a class="ep-zalo-btn zalo" href="${escapeHtml(zaloLink)}" target="_blank" rel="noopener"><span class="ep-zalo-icon"><svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#fff"/><text x="16" y="21.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="15" fill="#0068ff">Z</text></svg></span> Nhắn tin qua Zalo</a>` : ''}
+                    ${zaloPhone ? `<button type="button" class="ep-zalo-btn secondary" id="epCopyBtn"><i class="fa-regular fa-copy"></i> Sao chép số</button>` : ''}
+                </div>
+                ${zaloPhone ? `<div class="ep-zalo-copied" id="epCopiedMsg">✔ Đã sao chép số điện thoại</div>` : ''}
+            </div>` : '';
+
+        document.getElementById('content').innerHTML = heroHtml + programsHtml + zaloHtml;
+
+        const copyBtn = document.getElementById('epCopyBtn');
+        if (copyBtn){
+            copyBtn.addEventListener('click', async () => {
+                try{
+                    await navigator.clipboard.writeText(zaloPhone);
+                    const msg = document.getElementById('epCopiedMsg');
+                    if (msg){ msg.classList.add('show'); setTimeout(() => msg.classList.remove('show'), 2200); }
+                }catch(e){}
+            });
+        }
+    }catch(e){
+        showState(`<i class="fa-solid fa-triangle-exclamation"></i>Không tải được trang. Vui lòng thử lại sau.`, true);
+    }
+}
+
+loadFooterSettings();
+loadEarnProPage();
+</script>
+</body>
+</html>

@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/supabase-config.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản trị · SNG EDU</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<!-- Font Awesome: bắt buộc phải có dòng này thì mọi icon "fa-solid"/"fa-regular" trong toàn trang admin
+     (nút xoá, nút sửa, icon menu...) mới hiển thị được — thiếu dòng này thì các icon chỉ hiện ô trống. -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body>
+
+<!-- ================= AUTH LOADING (che màn hình trong lúc kiểm tra phiên đăng nhập) ================= -->
+<div id="authLoading"><div class="auth-spin"></div></div>
+
+<!-- ================= LOGIN ================= -->
+<div id="loginScreen" class="hidden">
+    <div class="login-card">
+        <div class="login-brand">
+            <span class="dot">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 3 2 8l10 5 8-4.2V15h1.5V8L12 3Z" fill="#fff"/>
+                    <path d="M6 11.5V16c0 1.7 2.7 3.5 6 3.5s6-1.8 6-3.5v-4.5l-6 3-6-3Z" fill="#fff" fill-opacity=".92"/>
+                </svg>
+            </span>
+            <div class="name">SNG EDU</div>
+            <div class="tag">Trang quản trị</div>
+        </div>
+        <label>Email</label>
+        <div class="login-field">
+            <span class="fico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m22 6-10 7L2 6"/></svg>
+            </span>
+            <input id="loginEmail" type="email" placeholder="admin@example.com" autocomplete="username">
+        </div>
+        <label>Mật khẩu</label>
+        <div class="login-field">
+            <span class="fico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            </span>
+            <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="pwd-toggle" id="loginPwdToggle" aria-label="Hiện mật khẩu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+        </div>
+        <button onclick="doLogin()">Đăng nhập</button>
+        <div id="loginMsg"></div>
+        <a class="login-back" href="../index.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            Quay lại trang chủ
+        </a>
+    </div>
+</div>
+
+<!-- ================= SHELL ================= -->
+<div id="shell" class="hidden">
+    <div class="sidebar-backdrop" id="adminSidebarBackdrop"></div>
+    <aside id="adminSidebar">
+        <button type="button" class="aside-close" id="adminAsideCloseBtn" aria-label="Đóng menu">✕</button>
+        <div class="brand">
+            <span class="dot">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 3 2 8l10 5 8-4.2V15h1.5V8L12 3Z" fill="#fff"/>
+                    <path d="M6 11.5V16c0 1.7 2.7 3.5 6 3.5s6-1.8 6-3.5v-4.5l-6 3-6-3Z" fill="#fff" fill-opacity=".92"/>
+                </svg>
+            </span>
+            <span class="brand-text">SNG EDU<small>Trang quản trị</small></span>
+        </div>
+
+        <div class="side-section">
+            <div class="side-list" id="settingsNavList">
+                <div class="side-item settings-item active" id="navStats" onclick="showStatsPanel()" style="margin-bottom:10px;background:rgba(255,255,255,.05);">
+                    <span class="set-ico">📊</span><span class="name">Thống kê</span>
+                </div>
+
+                <div class="side-item settings-item" id="navVisits" onclick="showVisitsPanel()" style="margin-bottom:16px;">
+                    <span class="set-ico">👣</span><span class="name">Lượt truy cập</span>
+                </div>
+
+                <div class="side-item settings-item" data-setkey="site_theme" onclick="openSettingsPanel('site_theme')" style="margin-bottom:10px;">
+                    <span class="set-ico">🎨</span><span class="name">Giao diện</span>
+                </div>
+
+                <div class="side-item settings-item" id="navMaintenance" onclick="showMaintenancePanel()" style="margin-bottom:16px;">
+                    <span class="set-ico">🚧</span><span class="name">Bảo trì</span>
+                    <span id="mntNavBadge" class="fb-nav-badge hidden">BẬT</span>
+                </div>
+
+                <div class="side-group" data-group="home">
+                    <div class="side-group-head" onclick="toggleSideGroup('home')">
+                        <span class="sg-ico">🏠</span><span class="sg-label">Trang chủ</span>
+                        <i class="sg-chevron">▸</i>
+                    </div>
+                    <div class="side-group-body">
+                        <div class="side-item settings-item" data-setkey="home_hero" onclick="openSettingsPanel('home_hero')">
+                            <span class="set-ico">🏠</span><span class="name">Ảnh bìa &amp; giới thiệu</span>
+                        </div>
+                        <div class="side-item settings-item" data-setkey="home_texts" onclick="openSettingsPanel('home_texts')">
+                            <span class="set-ico">✏️</span><span class="name">Chữ trang chủ</span>
+                        </div>
+                        <div class="side-item settings-item" id="navFeatured" onclick="showFeaturedManager()">
+                            <span class="set-ico">⭐</span><span class="name">Ghim nổi bật</span>
+                        </div>
+                        <div class="side-item settings-item" data-setkey="site_footer" onclick="openSettingsPanel('site_footer')">
+                            <span class="set-ico">📄</span><span class="name">Chân trang</span>
+                        </div>
+                        <div class="side-item settings-item" data-setkey="report_banner" onclick="openSettingsPanel('report_banner')">
+                            <span class="set-ico">🔔</span><span class="name">Banner góp ý</span>
+                        </div>
+                        <div class="side-item settings-item" data-setkey="promo_banner" onclick="openSettingsPanel('promo_banner')">
+                            <span class="set-ico">⏱️</span><span class="name">Banner Premium</span>
+                        </div>
+                        <div class="side-item settings-item" data-setkey="announcement_popup" onclick="openSettingsPanel('announcement_popup')">
+                            <span class="set-ico">📢</span><span class="name">Thông báo nổi</span>
+                        </div>
+                        <div class="side-item settings-item" id="navEmailSettings" onclick="showEmailSettingsPanel()">
+                            <span class="set-ico">✉️</span><span class="name">Cấu hình email</span>
+                        </div>
+                        <div class="side-item settings-item" id="navGeneralSettings" onclick="showGeneralSettings()">
+                            <span class="set-ico">⚙️</span><span class="name">Cài đặt chung</span>
+                        </div>
+                        <div class="side-item settings-item" id="nav_earn_pro" onclick="showContentManager('earn_pro')">
+                            <span class="set-ico">🎁</span><span class="name">Nhận Pro miễn phí</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="side-group" data-group="content">
+                    <div class="side-group-head" onclick="toggleSideGroup('content')">
+                        <span class="sg-ico">📚</span><span class="sg-label">Nội dung</span>
+                        <i class="sg-chevron">▸</i>
+                    </div>
+                    <div class="side-group-body">
+                        <div class="side-item settings-item" id="nav_doc" onclick="showContentManager('doc')">
+                            <span class="set-ico">📁</span><span class="name">Tài liệu</span>
+                        </div>
+                        <div class="side-item settings-item" id="nav_doc_preview" onclick="window.location.href='doc-preview.html'">
+                            <span class="set-ico">🧩</span><span class="name">Xem trước theo trang</span>
+                        </div>
+                        <div class="side-item settings-item" id="navSubjectMgr" onclick="showSubjectManager()">
+                            <span class="set-ico">📝</span><span class="name">Trắc nghiệm</span>
+                        </div>
+                        <div class="side-item settings-item" id="nav_tool" onclick="showContentManager('tool')">
+                            <span class="set-ico">🧰</span><span class="name">Công cụ</span>
+                        </div>
+                        <div class="side-item settings-item" id="nav_product" onclick="showContentManager('product')">
+                            <span class="set-ico">🛍️</span><span class="name">Sản phẩm</span>
+                        </div>
+                        <div class="side-item settings-item" id="nav_stock" onclick="showStockManager()">
+                            <span class="set-ico">🔑</span><span class="name">Kho tài khoản</span>
+                        </div>
+                        <div class="side-item settings-item" id="nav_support" onclick="showContentManager('support')">
+                            <span class="set-ico">🆘</span><span class="name">Hỗ trợ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="side-group" data-group="business">
+                    <div class="side-group-head" onclick="toggleSideGroup('business')">
+                        <span class="sg-ico">💼</span><span class="sg-label">Kinh doanh</span>
+                        <i class="sg-chevron">▸</i>
+                    </div>
+                    <div class="side-group-body">
+                        <div class="side-item settings-item" id="navSepayPkg" onclick="showSepayPackages()">
+                            <span class="set-ico">👑</span><span class="name">Gói Pro</span>
+                        </div>
+                        <div class="side-item settings-item" id="navPaymentSettings" onclick="showPaymentSettingsPanel()">
+                            <span class="set-ico">💳</span><span class="name">Cấu hình thanh toán</span>
+                        </div>
+                        <div class="side-item settings-item" id="navAccounts" onclick="showAccountsManager()">
+                            <span class="set-ico">👤</span><span class="name">Tài khoản</span>
+                        </div>
+                        <div class="side-item settings-item" id="navCtv" onclick="window.location.href='ctv.html'">
+                            <span class="set-ico">🤝</span><span class="name">Cộng tác viên (CTV)</span>
+                        </div>
+                        <div class="side-item settings-item" id="navFeedback" onclick="showFeedbackManager()">
+                            <span class="set-ico">💬</span><span class="name">Góp ý học viên</span>
+                            <span id="fbNavBadge" class="fb-nav-badge hidden">0</span>
+                        </div>
+                        <div class="side-item settings-item" id="navNotify" onclick="showNotifyManager()">
+                            <span class="set-ico">🔔</span><span class="name">Thông báo thành viên</span>
+                        </div>
+                        <div class="side-item settings-item" id="navUsageLimits" onclick="showUsageLimitsPanel()">
+                            <span class="set-ico">⏳</span><span class="name">Giới hạn Free</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-foot">
+            <div class="foot-avatar" id="footAvatar">A</div>
+            <div class="foot-info">
+                <div class="email" id="userEmail"></div>
+                <div class="foot-role">Quản trị viên</div>
+            </div>
+            <button onclick="doLogout()" title="Đăng xuất" aria-label="Đăng xuất">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+        </div>
+    </aside>
+
+    <main>
+        <div class="admin-topbar">
+            <button type="button" class="mobile-menu-btn" id="adminMobileMenuBtn" aria-label="Mở menu">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <span class="admin-topbar-brand">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 3 2 8l10 5 8-4.2V15h1.5V8L12 3Z" fill="#fff"/>
+                    <path d="M6 11.5V16c0 1.7 2.7 3.5 6 3.5s6-1.8 6-3.5v-4.5l-6 3-6-3Z" fill="#fff" fill-opacity=".92"/>
+                </svg>
+            </span>
+            <div class="admin-topbar-title" id="adminTopbarTitle">Thống kê</div>
+        </div>
+        <div id="msgBox"></div>
+
+        <div id="mntGlobalBanner" class="hidden" onclick="showMaintenancePanel()">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Website đang ở chế độ <b>Bảo trì</b> — khách chỉ vào được trang "Liên hệ Admin", các trang còn lại tự chuyển sang trang bảo trì. Bấm để tắt.</span>
+        </div>
+
+        <!-- ================= THỐNG KÊ (trang đầu tiên khi đăng nhập) ================= -->
+        <div id="statsPanel">
+            <div class="subj-mgr-head stats-head-row">
+                <div>
+                    <h2>📊 Thống kê</h2>
+                    <p class="hint">Tổng quan đơn hàng &amp; doanh thu trên toàn hệ thống. Chỉ tính các đơn ở trạng thái tương ứng, không tính đơn trùng lặp.</p>
+                </div>
+                <button class="btn-stats-reset" onclick="openResetStatsModal()">🗑️ Reset tất cả giao dịch</button>
+            </div>
+
+            <div class="acct-stats">
+                <div class="acct-stat-card total">
+                    <span class="ico">🧾</span>
+                    <div><div class="num" id="statPaidCount">0</div><div class="lbl">Đơn hàng thành công</div></div>
+                </div>
+                <div class="acct-stat-card revenue">
+                    <span class="ico">💰</span>
+                    <div><div class="num" id="statTotalRevenue">0đ</div><div class="lbl">Tổng số tiền đã chuyển</div></div>
+                </div>
+                <div class="acct-stat-card today">
+                    <span class="ico">📅</span>
+                    <div><div class="num" id="statTodayRevenue">0đ</div><div class="lbl">Doanh thu hôm nay</div></div>
+                </div>
+                <div class="acct-stat-card month">
+                    <span class="ico">🗓️</span>
+                    <div><div class="num" id="statMonthRevenue">0đ</div><div class="lbl">Doanh thu tháng này</div></div>
+                </div>
+            </div>
+
+            <div class="tabs stats-view-tabs" id="statsViewTabs">
+                <button type="button" class="tab active" data-view="overview" onclick="switchStatsView('overview')">Tổng quan</button>
+                <button type="button" class="tab" data-view="day" onclick="switchStatsView('day')">Theo ngày</button>
+                <button type="button" class="tab" data-view="month" onclick="switchStatsView('month')">Theo tháng</button>
+                <button type="button" class="tab" data-view="year" onclick="switchStatsView('year')">Theo năm</button>
+            </div>
+            <div class="stats-range-bar" id="statsRangeBar"></div>
+
+            <div class="stats-chart-card">
+                <div class="stats-chart-head">
+                    <h4 id="statsChartTitle">Doanh thu 14 ngày gần đây</h4>
+                    <div class="stats-chart-total" id="statsChartTotal">0đ</div>
+                </div>
+                <div class="stats-chart-box" id="statsChartBox">
+                    <div class="empty-state" style="padding:20px;">Đang tải...</div>
+                </div>
+            </div>
+
+            <div class="section-label">Theo loại đơn hàng</div>
+            <div class="stats-type-row" id="statTypeRow">
+                <div class="stats-type-card">
+                    <div class="stc-label">🎓 Khoá học</div>
+                    <div class="stc-num" id="statCourseCount">0 đơn</div>
+                    <div class="stc-sub" id="statCourseAmount">0đ</div>
+                </div>
+                <div class="stats-type-card">
+                    <div class="stc-label">👑 Gói thành viên</div>
+                    <div class="stc-num" id="statSubCount">0 đơn</div>
+                    <div class="stc-sub" id="statSubAmount">0đ</div>
+                </div>
+            </div>
+
+            <div class="subj-mgr-col-head" style="margin-bottom:10px;">
+                <h4 id="statsListTitle">Đơn hàng thành công gần đây</h4>
+                <button class="side-add" onclick="loadStatsData()">🔄 Làm mới</button>
+            </div>
+            <div class="stats-order-list" id="statsRecentList">
+                <div class="empty-state" style="padding:20px;">Đang tải...</div>
+            </div>
+        </div>
+
+        <div id="visitsPanel" class="hidden">
+            <div class="subj-mgr-head stats-head-row">
+                <div>
+                    <h2>👣 Lượt truy cập</h2>
+                    <p class="hint">Số lượt vào web &amp; mục nào được xem nhiều nhất (trang chủ, trắc nghiệm, tài liệu, công cụ, sản phẩm, hỗ trợ, đăng nhập...). "Lượt truy cập" đếm theo <b>thiết bị (IP)</b> — mỗi thiết bị chỉ tính 1 lượt duy nhất dù quay lại nhiều lần, không đại diện 100% cho khách thật (có thể lẫn bot / nhiều người dùng chung 1 mạng).</p>
+                </div>
+                <button class="btn-stats-reset" onclick="openResetVisitsModal()">🗑️ Xoá dữ liệu truy cập</button>
+            </div>
+
+            <div class="acct-stats">
+                <div class="acct-stat-card total">
+                    <span class="ico">👣</span>
+                    <div><div class="num" id="visitTotalCount">0</div><div class="lbl">Tổng lượt truy cập</div></div>
+                </div>
+                <div class="acct-stat-card active">
+                    <span class="ico">📄</span>
+                    <div><div class="num" id="visitUniqueCount">0</div><div class="lbl">Tổng lượt xem trang</div></div>
+                </div>
+                <div class="acct-stat-card today">
+                    <span class="ico">📅</span>
+                    <div><div class="num" id="visitTodayCount">0</div><div class="lbl">Lượt truy cập hôm nay</div></div>
+                </div>
+                <div class="acct-stat-card month">
+                    <span class="ico">🗓️</span>
+                    <div><div class="num" id="visitMonthCount">0</div><div class="lbl">Lượt truy cập tháng này</div></div>
+                </div>
+            </div>
+
+            <div class="tabs stats-view-tabs" id="visitsViewTabs">
+                <button type="button" class="tab active" data-view="overview" onclick="switchVisitsView('overview')">Tổng quan</button>
+                <button type="button" class="tab" data-view="day" onclick="switchVisitsView('day')">Theo ngày</button>
+                <button type="button" class="tab" data-view="month" onclick="switchVisitsView('month')">Theo tháng</button>
+                <button type="button" class="tab" data-view="year" onclick="switchVisitsView('year')">Theo năm</button>
+            </div>
+            <div class="stats-range-bar" id="visitsRangeBar"></div>
+
+            <div class="stats-chart-card">
+                <div class="stats-chart-head">
+                    <h4 id="visitsChartTitle">Lượt truy cập 14 ngày gần đây</h4>
+                    <div class="stats-chart-total" id="visitsChartTotal">0</div>
+                </div>
+                <div class="stats-chart-box" id="visitsChartBox">
+                    <div class="empty-state" style="padding:20px;">Đang tải...</div>
+                </div>
+            </div>
+
+            <div class="insight-grid-3">
+                <div class="insight-card">
+                    <h4>🌍 Theo quốc gia</h4>
+                    <div id="visitsByCountry"><div class="insight-empty">Đang tải...</div></div>
+                </div>
+                <div class="insight-card">
+                    <h4>🏙️ Theo thành phố</h4>
+                    <div id="visitsByCity"><div class="insight-empty">Đang tải...</div></div>
+                </div>
+                <div class="insight-card">
+                    <h4>📱 Theo thiết bị</h4>
+                    <div id="visitsByDevice"><div class="insight-empty">Đang tải...</div></div>
+                </div>
+            </div>
+
+            <div class="insight-grid-2">
+                <div class="insight-card">
+                    <h4>🧭 Theo trình duyệt</h4>
+                    <div id="visitsByBrowser"><div class="insight-empty">Đang tải...</div></div>
+                </div>
+                <div class="insight-card">
+                    <h4>🗣️ Theo ngôn ngữ</h4>
+                    <div id="visitsByLanguage"><div class="insight-empty">Đang tải...</div></div>
+                </div>
+            </div>
+
+            <div class="subj-mgr-col-head" style="margin-bottom:10px;">
+                <h4 id="visitsListTitle">Truy cập theo mục</h4>
+                <button class="side-add" onclick="loadVisitsData()">🔄 Làm mới</button>
+            </div>
+            <div class="stats-order-list" id="visitsByPageList">
+                <div class="empty-state" style="padding:20px;">Đang tải...</div>
+            </div>
+        </div>
+
+        <div id="subjectManagerPanel" class="hidden">
+            <div class="subj-mgr-head with-icon">
+                <div class="smh-ico">📚</div>
+                <div>
+                    <h2>Quản lý môn học &amp; chương / đề</h2>
+                    <p class="hint">Chọn một môn học, sau đó chọn chương/đề để bắt đầu soạn câu hỏi.</p>
+                </div>
+            </div>
+            <div class="subj-mgr-grid">
+                <div class="subj-mgr-col">
+                    <div class="subj-mgr-col-head">
+                        <h4>Môn học</h4>
+                        <button class="side-add" id="subjectAddBtn" onclick="openSubjectForm()">+ Thêm</button>
+                    </div>
+                    <div id="subjectList" class="side-list subj-mgr-list"></div>
+                    <div id="subjectForm" class="mini-form">
+                        <div id="subjectFormTitle" class="mini-form-title">Thêm môn học</div>
+                        <input id="newSubjectId" placeholder="Mã môn, vd: TH">
+                        <input id="newSubjectName" placeholder="Tên đầy đủ, vd: Triết học">
+                        <div class="folder-select" id="folderSelectWrap">
+                            <input id="newSubjectFolder" placeholder="Thư mục (tùy chọn), vd: Trắc nghiệm" autocomplete="off"
+                                   oninput="onFolderInput()" onfocus="openFolderDropdown()" onclick="event.stopPropagation(); openFolderDropdown()">
+                            <span class="folder-select-arrow">▾</span>
+                            <div class="folder-select-dropdown hidden" id="folderSelectDropdown"></div>
+                        </div>
+                        <select id="newSubjectStatus">
+                            <option value="ready">🟢 Sẵn sàng</option>
+                            <option value="maintenance">🛠️ Bảo trì</option>
+                            <option value="pending">⚪ Chưa cập nhật</option>
+                            <option value="hidden">🚫 Ẩn (không hiện trang chủ)</option>
+                        </select>
+                        <label style="display:flex;align-items:center;gap:9px;font-size:.8rem;color:var(--gray);font-weight:600;padding:4px 2px;cursor:pointer;">
+                            <span class="tgl-switch"><input type="checkbox" id="newSubjectShowExpl" checked><span class="tgl-slider"></span></span>
+                            Hiển thị giải thích đáp án
+                        </label>
+                        <div class="mini-actions">
+                            <button class="btn-mini-save" onclick="addSubject()">Lưu</button>
+                            <button class="btn-mini-cancel" onclick="closeSubjectForm()">Hủy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="subj-mgr-col">
+                    <div class="subj-mgr-col-head">
+                        <h4>Chương / đề <span id="chapCurrentSubjectName" class="hint-inline"></span></h4>
+                        <div class="side-toolbar" id="chapToolbar">
+                            <button class="side-add" onclick="openChapterForm()">+ Thêm</button>
+                            <button class="side-add" onclick="toggleChapterSelectMode()">☑ Chọn nhiều</button>
+                        </div>
+                    </div>
+                    <div id="chapBulkBar" class="chap-bulk-bar hidden">
+                        <div class="chap-bulk-count" id="chapBulkCount">Đã chọn 0 mục</div>
+                        <div class="chap-bulk-actions">
+                            <button class="btn-mini-cancel" onclick="toggleChapterSelectMode()">Hủy</button>
+                            <button class="btn-mini-danger" id="chapBulkDeleteBtn" onclick="bulkDeleteChapters()" disabled>🗑️ Xóa đã chọn</button>
+                        </div>
+                    </div>
+                    <div id="chapterList" class="side-list subj-mgr-list"></div>
+                    <div id="chapterForm" class="mini-form">
+                        <div id="chapterFormTitle" class="mini-form-title">Thêm chương/đề</div>
+                        <input id="newChapCode" placeholder="Mã chương, vd: 1-40">
+                        <input id="newChapLabel" placeholder="Tên hiển thị, vd: Câu 1 – 40">
+                        <input id="newChapNote" placeholder="Ghi chú (tùy chọn)">
+                        <select id="newChapGroup">
+                            <option value="Nội dung chính">Nội dung chính</option>
+                            <option value="Bổ sung">Bổ sung</option>
+                            <option value="Bài tập tính toán">Bài tập tính toán</option>
+                            <option value="Đề thi thử">Đề thi thử</option>
+                        </select>
+                        <div class="mini-actions">
+                            <button class="btn-mini-save" onclick="addChapter()">Lưu</button>
+                            <button class="btn-mini-cancel" onclick="closeChapterForm()">Hủy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="comingSoonPanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2><span id="comingSoonIcon">📁</span> <span id="comingSoonTitle">Tài liệu</span></h2>
+                <p class="hint" id="comingSoonHint">Mục này sẽ sớm có trong bản cập nhật tiếp theo.</p>
+            </div>
+            <div class="empty-state" style="padding:40px 14px;text-align:center;">Chưa cần cập nhật ở bước này — mục quản lý nội dung riêng sẽ được thêm sau.</div>
+        </div>
+
+        <!-- ================= QUẢN LÝ NỘI DUNG: TÀI LIỆU / CÔNG CỤ / SẢN PHẨM ================= -->
+        <!-- ================= QUẢN LÝ TÀI KHOẢN (đăng ký từ account/login.html) ================= -->
+        <div id="accountsPanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2>👤 Tài khoản</h2>
+                <p class="hint">Danh sách người dùng đã đăng ký qua trang đăng nhập. Bấm vào một tài khoản để xem chi tiết và thao tác.</p>
+            </div>
+
+            <div id="acctListView">
+                <div class="acct-stats">
+                    <div class="acct-stat-card total">
+                        <span class="ico">👥</span>
+                        <div><div class="num" id="acctStatTotal">0</div><div class="lbl">Tổng số tài khoản</div></div>
+                    </div>
+                    <div class="acct-stat-card active">
+                        <span class="ico">✅</span>
+                        <div><div class="num" id="acctStatActive">0</div><div class="lbl">Đang hoạt động</div></div>
+                    </div>
+                    <div class="acct-stat-card banned">
+                        <span class="ico">🔒</span>
+                        <div><div class="num" id="acctStatBanned">0</div><div class="lbl">Đã khoá đăng nhập</div></div>
+                    </div>
+                    <div class="acct-stat-card pro">
+                        <span class="ico">👑</span>
+                        <div><div class="num" id="acctStatPro">0</div><div class="lbl">Đang dùng Pro</div></div>
+                    </div>
+                    <div class="acct-stat-card balance">
+                        <span class="ico">💰</span>
+                        <div><div class="num" id="acctStatBalance">0</div><div class="lbl">Tổng số dư (đ)</div></div>
+                    </div>
+                </div>
+
+                <div class="acct-toolbar">
+                    <div class="acct-search-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input id="acctSearch" placeholder="Tìm theo email hoặc tên..." oninput="acctPage=1;renderAccountsList()">
+                    </div>
+                    <div class="acct-filter-chips" id="acctFilterChips">
+                        <button class="acct-chip active" data-f="all" onclick="setAcctFilter('all')">Tất cả</button>
+                        <button class="acct-chip" data-f="active" onclick="setAcctFilter('active')">Đang hoạt động</button>
+                        <button class="acct-chip" data-f="banned" onclick="setAcctFilter('banned')">Đã khoá</button>
+                        <button class="acct-chip" data-f="pro" onclick="setAcctFilter('pro')">Đang Pro</button>
+                    </div>
+                    <button class="side-add" onclick="loadAccountsList()">↻ Tải lại</button>
+                </div>
+                <p class="hint" id="acctCount" style="margin:0 0 12px;"></p>
+
+                <div id="acctListWrap" class="acct-list"></div>
+
+                <div class="acct-pagination" id="acctPagination" style="display:none;">
+                    <div class="acct-pg-info">
+                        Xem
+                        <select id="acctPageSizeSelect" onchange="changeAcctPageSize(this.value)">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        mục
+                        <span id="acctPageRangeInfo"></span>
+                    </div>
+                    <div class="acct-pg-nav" id="acctPageNav"></div>
+                </div>
+            </div>
+
+            <div id="acctDetailView" class="hidden"></div>
+        </div>
+
+        <!-- ================= GÓP Ý HỌC VIÊN (bảng feedback — thay cho link Google Form ngoài) ================= -->
+        <div id="feedbackPanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2>💬 Góp ý học viên</h2>
+                <p class="hint">Học viên gửi từ banner "Gặp câu hỏi sai?" ở trang chọn chương, từ trang <b>gop-y.html</b> (thẻ "Gửi form góp ý" ở tab Hỗ trợ, hoặc nút "Báo lỗi câu này" khi làm đề), sẽ vào thẳng đây — không cần qua form ngoài nữa. Bấm vào một góp ý để xem đầy đủ chi tiết, sau đó soạn email cảm ơn/phản hồi (đã có sẵn mẫu) rồi bấm gửi — hệ thống sẽ tự động gửi email cho học viên và đánh dấu đã xử lý.</p>
+            </div>
+
+            <div id="fbListView">
+                <div class="acct-stats">
+                    <div class="acct-stat-card total">
+                        <span class="ico">💬</span>
+                        <div><div class="num" id="fbStatTotal">0</div><div class="lbl">Tổng số góp ý</div></div>
+                    </div>
+                    <div class="acct-stat-card banned">
+                        <span class="ico">🔴</span>
+                        <div><div class="num" id="fbStatNew">0</div><div class="lbl">Chưa đọc</div></div>
+                    </div>
+                    <div class="acct-stat-card active">
+                        <span class="ico">✅</span>
+                        <div><div class="num" id="fbStatResolved">0</div><div class="lbl">Đã xử lý</div></div>
+                    </div>
+                </div>
+
+                <div class="acct-toolbar">
+                    <div class="acct-search-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input id="fbSearch" placeholder="Tìm theo email hoặc nội dung..." oninput="renderFeedbackList()">
+                    </div>
+                    <div class="acct-filter-chips" id="fbFilterChips">
+                        <button class="acct-chip active" data-f="all" onclick="setFbFilter('all')">Tất cả</button>
+                        <button class="acct-chip" data-f="new" onclick="setFbFilter('new')">Chưa đọc</button>
+                        <button class="acct-chip" data-f="read" onclick="setFbFilter('read')">Đã đọc</button>
+                        <button class="acct-chip" data-f="resolved" onclick="setFbFilter('resolved')">Đã xử lý</button>
+                    </div>
+                    <button class="side-add" onclick="loadFeedbackList()">↻ Tải lại</button>
+                </div>
+                <p class="hint" id="fbCount" style="margin:0 0 12px;"></p>
+
+                <div id="fbListWrap" class="acct-list"></div>
+            </div>
+
+            <div id="fbDetailView" class="hidden"></div>
+        </div>
+
+        <!-- ================= THÔNG BÁO THÀNH VIÊN (bảng user_notifications) =================
+             Khác với "Thông báo nổi" (hiện popup cho TẤT CẢ mọi người), tab này gửi 1 thông báo
+             riêng tới ĐÚNG 1 thành viên do admin chọn — thành viên đó sẽ thấy trong chuông 🔔
+             ở trang chủ (chỉ họ thấy, không ai khác thấy). -->
+        <div id="notifyPanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2>🔔 Thông báo thành viên</h2>
+                <p class="hint">Gửi một thông báo riêng tới đúng 1 thành viên (khác với "Thông báo nổi" — hiện cho tất cả mọi người). Thành viên sẽ thấy thông báo này trong chuông 🔔 ở góc trang chủ của riêng họ.</p>
+            </div>
+
+            <div id="notifyListView">
+                <div class="acct-stats">
+                    <div class="acct-stat-card total">
+                        <span class="ico">🔔</span>
+                        <div><div class="num" id="notifyStatTotal">0</div><div class="lbl">Tổng đã gửi</div></div>
+                    </div>
+                    <div class="acct-stat-card banned">
+                        <span class="ico">🔴</span>
+                        <div><div class="num" id="notifyStatUnread">0</div><div class="lbl">Chưa đọc</div></div>
+                    </div>
+                    <div class="acct-stat-card active">
+                        <span class="ico">✅</span>
+                        <div><div class="num" id="notifyStatRead">0</div><div class="lbl">Đã đọc</div></div>
+                    </div>
+                </div>
+
+                <div class="acct-toolbar">
+                    <div class="acct-search-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input id="notifySearch" placeholder="Tìm theo email người nhận hoặc nội dung..." oninput="renderNotifyList()">
+                    </div>
+                    <div class="acct-filter-chips" id="notifyFilterChips">
+                        <button class="acct-chip active" data-f="all" onclick="setNotifyFilter('all')">Tất cả</button>
+                        <button class="acct-chip" data-f="unread" onclick="setNotifyFilter('unread')">Chưa đọc</button>
+                        <button class="acct-chip" data-f="read" onclick="setNotifyFilter('read')">Đã đọc</button>
+                    </div>
+                    <button class="side-add" title="Gửi thông báo" aria-label="Gửi thông báo" onclick="openNotifyComposeModal()" style="width:36px;height:36px;padding:0;border-radius:50%;font-size:1.3rem;line-height:1;flex:0 0 auto;color:#1d3fd6;font-weight:900;">+</button>
+                    <button class="side-add" onclick="loadNotifyList()">↻ Tải lại</button>
+                </div>
+                <p class="hint" id="notifyCount" style="margin:0 0 12px;"></p>
+
+                <div id="notifyListWrap" class="acct-list"></div>
+            </div>
+        </div>
+
+        <div id="contentManagerPanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2><span id="cmHeaderIcon">📁</span> <span id="cmHeaderTitle">Tài liệu</span></h2>
+                <p class="hint" id="cmHeaderHint"></p>
+            </div>
+            <div id="supportIntroBlock" class="mini-form show hidden" style="max-width:620px; margin-bottom:26px; display:flex;">
+                <div class="mini-form-title">Khối giới thiệu đầu trang</div>
+                <label>Tiêu đề</label>
+                <input id="supportIntroTitleInput" placeholder="VD: Kẹt chỗ nào, nhắn liền chỗ đó 👋">
+                <label>Mô tả</label>
+                <textarea id="supportIntroDescInput" rows="3" placeholder="Mô tả ngắn hiển thị dưới tiêu đề"></textarea>
+                <div class="mini-actions">
+                    <button class="btn-mini-save" onclick="saveSupportIntro()">Lưu</button>
+                </div>
+                <div id="supportIntroMsg" class="hint" style="margin-top:6px;"></div>
+            </div>
+            <div id="earnProIntroBlock" class="mini-form show hidden" style="max-width:620px; margin-bottom:26px; display:flex;">
+                <div class="mini-form-title">Khối giới thiệu đầu trang &amp; liên hệ Zalo</div>
+                <label>Tiêu đề</label>
+                <input id="earnProIntroTitleInput" placeholder="VD: Nhận Pro miễn phí">
+                <label>Mô tả</label>
+                <textarea id="earnProIntroDescInput" rows="3" placeholder="Mô tả ngắn hiển thị dưới tiêu đề"></textarea>
+                <div class="cm-section"><i class="fa-brands fa-facebook-messenger"></i> Liên hệ Zalo xác nhận</div>
+                <label>Số điện thoại Zalo (hiện dạng chữ, khách bấm sao chép/gọi)</label>
+                <input id="earnProZaloPhoneInput" placeholder="VD: 0825160035">
+                <label>Link Zalo (mở thẳng ứng dụng Zalo)</label>
+                <input id="earnProZaloLinkInput" placeholder="VD: https://zalo.me/0825160035">
+                <div class="mini-actions">
+                    <button class="btn-mini-save" onclick="saveEarnProIntro()">Lưu</button>
+                </div>
+                <div id="earnProIntroMsg" class="hint" style="margin-top:6px;"></div>
+            </div>
+            <div id="cmListsWrap"></div>
+        </div>
+
+        <!-- ================= GHIM NỔI BẬT (site_settings key 'home_featured') ================= -->
+        <div id="featuredPanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2>⭐ Ghim nổi bật</h2>
+                <p class="hint">Chọn Học phần / Tài liệu / Công cụ / Sản phẩm để ghim. Mỗi loại sẽ tự hiện đúng khối tương ứng trên trang chủ: Học phần → nổi lên đầu khối "Học phần nổi bật" (có ribbon ★); Công cụ / Sản phẩm → hiện ở khối "X nổi bật" riêng ngay bên dưới. Riêng <b>Tài liệu</b> được tách thành 2 khối độc lập trên trang chủ — "Tài liệu miễn phí nổi bật" và "Tài liệu trả phí nổi bật" — thứ tự ghim của mỗi khối tính riêng theo đúng thứ tự tương đối trong nhóm con tương ứng bên dưới. Kéo thả (⋮⋮) trong danh sách "Đang ghim" để đổi thứ tự hiển thị, bấm biểu tượng mắt để ẩn/hiện tạm thời mà không cần bỏ ghim.</p>
+            </div>
+            <div class="subj-mgr-grid">
+                <div class="subj-mgr-col" style="max-width:460px;">
+                    <div class="subj-mgr-col-head">
+                        <h4><i class="fa-solid fa-star"></i> Đang ghim</h4>
+                    </div>
+                    <div id="featuredPinnedList" class="side-list subj-mgr-list"></div>
+                </div>
+                <div class="subj-mgr-col">
+                    <div class="subj-mgr-col-head">
+                        <h4>Chọn mục để ghim</h4>
+                    </div>
+                    <div class="fmgr-tabs" id="featuredSourceTabs">
+                        <button type="button" class="fmgr-tab active" data-src="subject" onclick="switchFeaturedSourceTab('subject')">📝 Học phần</button>
+                        <button type="button" class="fmgr-tab" data-src="doc" onclick="switchFeaturedSourceTab('doc')">📁 Tài liệu</button>
+                        <button type="button" class="fmgr-tab" data-src="tool" onclick="switchFeaturedSourceTab('tool')">🧰 Công cụ</button>
+                        <button type="button" class="fmgr-tab" data-src="product" onclick="switchFeaturedSourceTab('product')">🛍️ Sản phẩm</button>
+                    </div>
+                    <div id="featuredSourceList" class="side-list subj-mgr-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= QUẢN LÝ GÓI THANH TOÁN TỰ ĐỘNG (bảng pro_packages, dùng cho SePay) ================= -->
+        <div id="sepayPackagesPanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2>👑 Gói Pro</h2>
+                <p class="hint">Quản lý toàn bộ gói Pro ở một nơi duy nhất: giá & thời hạn (dùng để tính tiền qua SePay) và cả nội dung hiển thị trên trang chủ (mô tả, icon, màu, có nổi bật hay không). Sửa/thêm/xoá ở đây sẽ tự động cập nhật cả trang chủ lẫn cổng thanh toán, không cần làm gì thêm ở nơi khác.</p>
+            </div>
+            <div class="subj-mgr-grid">
+                <div class="subj-mgr-col" style="max-width:460px;">
+                    <div class="subj-mgr-col-head">
+                        <h4><i class="fa-solid fa-crown"></i> Danh sách gói</h4>
+                        <button class="side-add" onclick="openSepayPackageForm()">+ Thêm gói</button>
+                    </div>
+                    <div id="sepayPkgList" class="side-list subj-mgr-list"></div>
+                    <p class="hint" id="sepayPkgMsg" style="margin-top:10px;min-height:1.2em;"></p>
+                </div>
+                <div class="subj-mgr-col">
+                    <div id="sepayPkgForm" class="mini-form show" style="display:flex;">
+                        <div class="mini-form-title" id="sepayPkgFormTitle">Thêm gói</div>
+                        <input type="hidden" id="sepayPkgId" value="">
+
+                        <label>Icon (mã lớp Font Awesome)</label>
+                        <input id="sepayPkgIcon" placeholder="fa-solid fa-crown" oninput="updateSepayPkgPreview()">
+                        <div class="hint" style="margin:2px 0 0;">Xem mã icon tại <a href="https://fontawesome.com/search" target="_blank" rel="noopener">fontawesome.com/search</a>.</div>
+
+                        <label style="margin-top:10px;">Màu</label>
+                        <div class="color-swatch-row" id="sepayPkgColorRow"></div>
+
+                        <label style="margin-top:10px;">Tên gói (hiển thị trên thẻ)</label>
+                        <input id="sepayPkgName" placeholder="VD: Gói Premium 1 tháng" oninput="updateSepayPkgPreview()">
+
+                        <label style="margin-top:10px;">Mô tả ngắn</label>
+                        <input id="sepayPkgDesc" placeholder="VD: Mở khoá toàn bộ tài liệu & trắc nghiệm" oninput="updateSepayPkgPreview()">
+
+                        <label style="margin-top:10px;">Giá (VNĐ)</label>
+                        <input id="sepayPkgPrice" type="number" min="0" step="1000" placeholder="VD: 99000" oninput="updateSepayPkgPreview()">
+                        <div class="hint" style="margin-top:4px;">Nhập số nguyên, không có dấu chấm. VD: 99000 = 99.000đ.</div>
+
+                        <label style="margin-top:10px;">Thời hạn (số ngày)</label>
+                        <input id="sepayPkgDuration" type="number" min="1" step="1" placeholder="VD: 30" oninput="updateSepayPkgPreview()">
+                        <div class="hint" style="margin-top:4px;">VD: 30 = 1 tháng, 365 = 1 năm, 7 = 1 tuần.</div>
+
+                        <label style="margin-top:10px;">Thứ tự hiển thị</label>
+                        <input id="sepayPkgOrder" type="number" step="1" placeholder="0">
+                        <div class="hint" style="margin-top:4px;">Số nhỏ hơn hiện trước. Để trống hoặc 0 nếu không cần sắp xếp riêng (sẽ xếp theo giá tăng dần).</div>
+
+                        <label style="margin-top:10px;display:flex;align-items:center;gap:9px;cursor:pointer;">
+                            <span class="tgl-switch"><input type="checkbox" id="sepayPkgPopular" onchange="updateSepayPkgPreview()"><span class="tgl-slider"></span></span>
+                            <span>Đánh dấu "Phổ biến nhất" (nổi bật màu amber trên trang chủ)</span>
+                        </label>
+                        <label style="margin-top:6px;display:flex;align-items:center;gap:9px;cursor:pointer;">
+                            <span class="tgl-switch"><input type="checkbox" id="sepayPkgActive" checked><span class="tgl-slider"></span></span>
+                            <span>Đang hoạt động (hiển thị trên trang chủ & cho khách chọn mua)</span>
+                        </label>
+
+                        <div class="settings-preview">
+                            <div class="prev-ico" id="sepayPkgPreviewIco"><i class="fa-solid fa-crown"></i></div>
+                            <div class="prev-text"><b id="sepayPkgPreviewTitle">Tên gói</b><span id="sepayPkgPreviewDesc">Mô tả · Giá / thời hạn</span></div>
+                        </div>
+
+                        <div class="mini-actions">
+                            <button class="btn-mini-save" onclick="saveSepayPackage()">Lưu</button>
+                            <button class="btn-mini-cancel" onclick="closeSepayPackageForm()">Hủy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="usageLimitsPanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2>⏳ Giới hạn Free</h2>
+                <p class="hint">Giới hạn số lượt sử dụng mỗi ngày cho tài khoản Miễn phí. Tài khoản Pro luôn không giới hạn ở cả 2 mục này. Tài liệu trả phí không bị ảnh hưởng bởi cài đặt này — luôn cần thanh toán để tải, không phân biệt Free hay Pro.</p>
+            </div>
+            <div class="subj-mgr-grid">
+                <div class="subj-mgr-col" style="max-width:460px;">
+                    <div class="settings-form-card">
+                        <h3>📝 Làm trắc nghiệm</h3>
+                        <p class="hint">Số lượt làm trắc nghiệm (nộp bài) tối đa mỗi ngày cho tài khoản Miễn phí. Đặt 0 để tắt giới hạn (không giới hạn cho cả Free).</p>
+                        <label>Số lượt / ngày</label>
+                        <input id="ulQuizPerDay" type="number" min="0" step="1" placeholder="3">
+                    </div>
+
+                    <div class="settings-form-card" style="margin-top:16px;">
+                        <h3>📁 Tải tài liệu miễn phí</h3>
+                        <p class="hint">Số lượt tải/mở tài liệu miễn phí tối đa mỗi ngày cho tài khoản Miễn phí. Không áp dụng cho tài liệu trả phí. Đặt 0 để tắt giới hạn.</p>
+                        <label>Số lượt / ngày</label>
+                        <input id="ulDocPerDay" type="number" min="0" step="1" placeholder="2">
+                    </div>
+
+                    <div class="mini-actions" style="margin-top:16px;">
+                        <button class="btn-mini-save" onclick="saveUsageLimits()">💾 Lưu thay đổi</button>
+                    </div>
+                    <div id="ulSaveMsg" class="hint" style="margin-top:10px;min-height:1.2em;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= CẤU HÌNH THANH TOÁN (site_settings key 'payment_settings') =================
+             Bật/tắt cổng SePay và tuỳ chọn "Thanh toán bằng số dư ví" trên toàn bộ trang, không cần sửa code.
+             Merchant ID / Secret Key thật của SePay KHÔNG cấu hình ở đây (lý do bảo mật — xem ghi chú trong khung). -->
+        <div id="paymentSettingsPanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2>💳 Cấu hình thanh toán</h2>
+                <p class="hint">Bật/tắt cổng thanh toán và các phương thức thanh toán trên toàn bộ trang. Tắt tạm thời khi bảo trì, khi cổng SePay gặp sự cố, hoặc khi muốn tạm dừng nhận thanh toán vì lý do nào đó — không cần sửa code, có hiệu lực ngay.</p>
+            </div>
+            <div class="subj-mgr-grid">
+                <div class="subj-mgr-col" style="max-width:520px;">
+                    <div class="settings-form-card">
+                        <h3>🏦 Cổng thanh toán SePay (chuyển khoản / thẻ)</h3>
+                        <p class="hint">Áp dụng cho MỌI nút "Xác nhận thanh toán" trên trang (gói Pro, tài liệu, sản phẩm, khoá học, nạp tiền vào ví). Khi tắt, nút sẽ bị khoá và hiện thông báo bạn cấu hình bên dưới — chặn cả ở phía máy chủ, không thể lách qua giao diện.</p>
+                        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;">
+                            <span class="tgl-switch"><input type="checkbox" id="paySepayEnabled" checked><span class="tgl-slider"></span></span>
+                            <span>Đang bật cổng thanh toán SePay</span>
+                        </label>
+                        <label style="margin-top:12px;">Thông báo hiện khi tắt</label>
+                        <textarea id="paySepayDisabledMsg" rows="2" placeholder="VD: Cổng thanh toán đang bảo trì, vui lòng quay lại sau ít phút."></textarea>
+                        <div class="acct-form-note" style="margin-top:12px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span>Merchant ID / Secret Key thật của SePay không cấu hình ở đây vì lý do bảo mật (không được để lộ ra trình duyệt). Chúng được đặt riêng trong <b>Supabase → Edge Functions → Secrets</b> với tên <code>SEPAY_MERCHANT_ID</code>, <code>SEPAY_SECRET_KEY</code>, <code>SEPAY_ENV</code>. Mục này chỉ bật/tắt việc CHO PHÉP dùng cổng, không đổi được thông tin merchant.</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-form-card" style="margin-top:16px;">
+                        <h3>👛 Thanh toán bằng số dư ví</h3>
+                        <p class="hint">Tuỳ chọn "Thanh toán bằng số dư ví" hiện cạnh nút SePay ở các popup xác nhận mua. Tắt để buộc mọi giao dịch phải đi qua cổng SePay.</p>
+                        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;">
+                            <span class="tgl-switch"><input type="checkbox" id="payBalanceEnabled" checked><span class="tgl-slider"></span></span>
+                            <span>Cho phép thanh toán bằng số dư ví</span>
+                        </label>
+                        <label style="margin-top:14px;display:flex;align-items:center;gap:9px;cursor:pointer;">
+                            <span class="tgl-switch"><input type="checkbox" id="payTopupEnabled" checked><span class="tgl-slider"></span></span>
+                            <span>Cho phép nạp thêm tiền vào ví</span>
+                        </label>
+                        <p class="hint" style="margin-top:6px;">Mục này độc lập với cổng SePay ở trên — tắt riêng mục này chỉ ẩn/khoá việc nạp tiền, không ảnh hưởng tới thanh toán khoá học, gói Pro, tài liệu, sản phẩm...</p>
+                    </div>
+
+                    <div class="mini-actions" style="margin-top:16px;">
+                        <button class="btn-mini-save" onclick="savePaymentSettings()">💾 Lưu thay đổi</button>
+                    </div>
+                    <div id="paySaveMsg" class="hint" style="margin-top:10px;min-height:1.2em;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= CẤU HÌNH EMAIL (site_settings key 'email_settings') =================
+             Bật/tắt từng loại email tự động gửi cho học viên (chào mừng, mã quên mật khẩu,
+             cảnh báo đổi mật khẩu) — không cần sửa code, có hiệu lực ngay ở lần gửi tiếp theo. -->
+        <div id="emailSettingsPanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2>✉️ Cấu hình email</h2>
+                <p class="hint">Bật/tắt các email hệ thống tự động gửi cho học viên. Việc bật/tắt được chặn ở phía máy chủ (Edge Function), không thể lách qua giao diện. Cần đã cấu hình <code>RESEND_API_KEY</code> và <code>EMAIL_FROM</code> trong Supabase → Edge Functions → Secrets thì email mới gửi được, dù các mục dưới đây có bật hay không.</p>
+            </div>
+            <div class="subj-mgr-grid">
+                <div class="subj-mgr-col" style="max-width:520px;">
+                    <div class="settings-form-card">
+                        <h3>🎉 Email chào mừng khi đăng ký</h3>
+                        <p class="hint">Gửi ngay sau khi học viên đăng ký/đăng nhập lần đầu thành công. Mỗi tài khoản chỉ nhận đúng 1 lần.</p>
+                        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;">
+                            <span class="tgl-switch"><input type="checkbox" id="emlWelcomeEnabled" checked><span class="tgl-slider"></span></span>
+                            <span>Đang bật email chào mừng</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-form-card" style="margin-top:16px;">
+                        <h3>🔑 Mã xác nhận "Quên mật khẩu"</h3>
+                        <p class="hint">Gửi mã OTP 6 số khi học viên bấm "Quên mật khẩu" ở trang đăng nhập. <b>Lưu ý:</b> tắt mục này đồng nghĩa học viên sẽ KHÔNG thể tự đặt lại mật khẩu qua email nữa (trang sẽ báo lỗi rõ cho học viên) — chỉ tắt khi thật sự cần thiết (vd đang gặp sự cố với Resend).</p>
+                        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;">
+                            <span class="tgl-switch"><input type="checkbox" id="emlResetCodeEnabled" checked><span class="tgl-slider"></span></span>
+                            <span>Đang bật gửi mã quên mật khẩu qua email</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-form-card" style="margin-top:16px;">
+                        <h3>🛡️ Cảnh báo đổi mật khẩu thành công</h3>
+                        <p class="hint">Gửi cho học viên ngay sau khi họ tự đổi mật khẩu ở trang Tài khoản, để cảnh báo nếu không phải chính họ thực hiện.</p>
+                        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;">
+                            <span class="tgl-switch"><input type="checkbox" id="emlPasswordChangedEnabled" checked><span class="tgl-slider"></span></span>
+                            <span>Đang bật email cảnh báo đổi mật khẩu</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-form-card" style="margin-top:16px;">
+                        <h3>📭 Dòng nhắc "Kiểm tra thư rác / Spam"</h3>
+                        <p class="hint">Nội dung hiển thị cho học viên khi cần chờ nhận email. Để trống sẽ dùng câu mặc định. Có thể tô đậm/nghiêng/gạch chân/đổi màu chữ bằng thanh công cụ bên dưới.</p>
+
+                        <label>Thông báo khi đăng ký thành công (khung xanh)</label>
+                        <div class="richtext-toolbar">
+                            <button type="button" onmousedown="event.preventDefault()" onclick="rtCmd('emlRegisterSuccessMsg','bold')" title="Đậm"><b>B</b></button>
+                            <button type="button" onmousedown="event.preventDefault()" onclick="rtCmd('emlRegisterSuccessMsg','italic')" title="Nghiêng"><i>I</i></button>
+                            <button type="button" onmousedown="event.preventDefault()" onclick="rtCmd('emlRegisterSuccessMsg','underline')" title="Gạch chân"><u>U</u></button>
+                            <input type="color" title="Màu chữ" onmousedown="rtRemember('emlRegisterSuccessMsg')" onchange="rtColor('emlRegisterSuccessMsg', this.value)">
+                            <button type="button" onmousedown="event.preventDefault()" onclick="rtClear('emlRegisterSuccessMsg')" title="Xoá định dạng">⨯</button>
+                        </div>
+                        <div id="emlRegisterSuccessMsg" class="richtext-input" contenteditable="true" data-placeholder="Tạo tài khoản thành công! Kiểm tra email để xác nhận trước khi đăng nhập."></div>
+
+                        <label style="margin-top:12px;">Sau khi đăng ký thành công (chờ email xác nhận tài khoản)</label>
+                        <div class="richtext-toolbar">
+                            <button type="button" onmousedown="event.preventDefault()" onclick="rtCmd('emlRegisterSpamHint','bold')" title="Đậm"><b>B</b></button>
+                            <button type="button" onmousedown="event.preventDefault()" onclick="rtCmd('emlRegisterSpamHint','italic')" title="Nghiêng"><i>I</i></button>
+                            <button type="button" onmousedown="event.preventDefault()" onclick="rtCmd('emlRegisterSpamHint','underline')" title="Gạch chân"><u>U</u></button>
+                            <input type="color" title="Màu chữ" onmousedown="rtRemember('emlRegisterSpamHint')" onchange="rtColor('emlRegisterSpamHint', this.value)">
+                            <button type="button" onmousedown="event.preventDefault()" onclick="rtClear('emlRegisterSpamHint')" title="Xoá định dạng">⨯</button>
+                        </div>
+                        <div id="emlRegisterSpamHint" class="richtext-input" contenteditable="true" data-placeholder="Không thấy email xác nhận? Kiểm tra thêm mục Thư rác / Spam nhé."></div>
+
+                        <label style="margin-top:12px;">Ở bước nhập mã "Quên mật khẩu"</label>
+                        <textarea id="emlForgotSpamHint" rows="2" placeholder="Không thấy email? Kiểm tra thêm mục Thư rác / Spam — mã có thể bị lọc vào đó..."></textarea>
+                    </div>
+
+                    <div class="acct-form-note" style="margin-top:16px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span><b>Bật/tắt bắt buộc xác nhận email trước khi đăng nhập</b> không cấu hình được ở web này vì đây là quy tắc do <b>Supabase Auth</b> áp dụng thẳng ở máy chủ (không thể lách qua giao diện). Vào <b>Supabase Dashboard → Authentication → Sign In / Providers → Email → mục "Confirm email"</b> để bật (bắt buộc xác nhận) hoặc tắt (đăng ký xong vào học luôn). Nội dung email xác nhận thật gửi vào hộp thư (khác với 2 khung thông báo trên web ở trên) cũng chỉnh ở Supabase Dashboard → Authentication → Emails, không cấu hình được ở đây.</span>
+                    </div>
+
+                    <div class="mini-actions" style="margin-top:16px;">
+                        <button class="btn-mini-save" onclick="saveEmailSettings()">💾 Lưu thay đổi</button>
+                    </div>
+                    <div id="emlSaveMsg" class="hint" style="margin-top:10px;min-height:1.2em;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="generalSettingsPanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2>⚙️ Cài đặt</h2>
+                <p class="hint">Menu điều hướng, thẻ "Hỗ trợ" trên trang chủ, thông tin tài khoản và đổi mật khẩu đăng nhập.</p>
+            </div>
+            <div class="subj-mgr-grid">
+                <div class="subj-mgr-col" style="max-width:460px;">
+                    <div class="settings-form-card">
+                        <h3>🧭 Menu điều hướng</h3>
+                        <p class="hint">Ẩn/hiện và kéo thả để sắp xếp thứ tự các tab hiển thị ở menu bên trái trên trang chủ. Tab bị ẩn vẫn có thể mở qua thẻ "Truy cập nhanh" hoặc đường dẫn trực tiếp, chỉ không xuất hiện trên menu.</p>
+                        <div id="navTabsList" class="side-list subj-mgr-list"></div>
+                        <div class="hint" id="navTabsMsg" style="margin-top:10px;min-height:1.2em;"></div>
+                    </div>
+
+                    <div class="settings-form-card" style="margin-top:16px;">
+                        <h3>👑 Tính năng gói Pro</h3>
+                        <p class="hint">Danh sách tính năng hiển thị trong popup "Nâng cấp Pro" và popup xác nhận thanh toán ở trang chủ. Kéo thả để đổi thứ tự.</p>
+                        <div id="proFeaturesList"></div>
+                        <button type="button" class="side-add" onclick="addProFeatureRow()">+ Thêm tính năng</button>
+                        <div class="mini-actions" style="margin-top:14px;">
+                            <button class="btn-mini-save" onclick="saveProFeatures()">💾 Lưu thay đổi</button>
+                        </div>
+                        <div class="hint" id="proFeaturesMsg" style="margin-top:10px;min-height:1.2em;"></div>
+                    </div>
+
+                    <div class="settings-form-card" style="margin-top:16px;">
+                        <h3>🪪 Trang "Liên hệ Admin"</h3>
+                        <p class="hint">Trang giới thiệu &amp; liên hệ quản trị viên, xem tại <code>lien-he.html</code>. Gắn link này vào thẻ "Truy cập nhanh" (mục Truy cập nhanh ở trên) để hiện lên trang chủ cho học viên bấm vào.</p>
+
+                        <label>Ảnh đại diện</label>
+                        <div class="file-upload-row">
+                            <div class="file-upload-preview" id="acAvatarPreviewWrap">
+                                <img id="acAvatarPreviewImg" class="hidden" alt="">
+                                <i class="fa-solid fa-user-tie" id="acAvatarPreviewIcon"></i>
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <input type="file" id="acAvatarInput" accept="image/*" onchange="onAdminContactAvatarSelected()" style="margin-bottom:6px;">
+                                <div class="hint" id="acAvatarName" style="min-height:1.1em;"></div>
+                                <button type="button" class="btn-mini-cancel" id="acAvatarRemoveBtn" style="display:none;margin-top:4px;" onclick="removeAdminContactAvatar()">Xoá ảnh</button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="acAvatarUrl">
+
+                        <label style="margin-top:12px;">Họ tên hiển thị</label>
+                        <input type="text" id="acName" placeholder="Nguyễn Văn A">
+
+                        <label>Chức danh</label>
+                        <input type="text" id="acRole" placeholder="Quản trị viên SNG EDU">
+
+                        <label>Giới thiệu ngắn</label>
+                        <textarea id="acBio" rows="3" placeholder="Mình phụ trách nội dung và hỗ trợ kỹ thuật cho SNG EDU. Có gì thắc mắc về tài liệu, đề thi hay tài khoản Premium, cứ nhắn mình qua các kênh bên dưới nhé!"></textarea>
+
+                        <label>Danh sách liên hệ</label>
+                        <div class="hint" style="margin:2px 0 8px;">Chọn nền tảng (icon tự động điền), dán link/username rồi bấm Lưu. Chọn "Khác" nếu nền tảng không có trong danh sách.</div>
+                        <div id="acContactsList"></div>
+                        <button type="button" class="side-add" onclick="addAdminContactRow()">+ Thêm kênh liên hệ</button>
+
+                        <label style="margin-top:12px;">Ghi chú thêm (không bắt buộc)</label>
+                        <textarea id="acNote" rows="2" placeholder="Phản hồi trong giờ hành chính 8h-22h hàng ngày."></textarea>
+
+                        <div class="mini-actions" style="margin-top:14px;">
+                            <button class="btn-mini-save" onclick="saveAdminContact()">💾 Lưu thay đổi</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-form-card" style="margin-top:16px;">
+                        <h3>Thẻ "Hỗ trợ" (trang chủ)</h3>
+                        <p class="hint">Hiển thị ở mục Truy cập nhanh trên trang chủ.</p>
+                        <label>Icon (mã lớp Font Awesome)</label>
+                        <input id="genSupportIcon" placeholder="fa-solid fa-headset">
+                        <div class="hint" style="margin:2px 0 0;">Xem mã icon tại <a href="https://fontawesome.com/search" target="_blank" rel="noopener">fontawesome.com/search</a>.</div>
+                        <label style="margin-top:10px;">Màu icon</label>
+                        <div class="color-swatch-row" id="genSupportColorRow">
+                            <div class="color-swatch indigo" data-color="indigo" onclick="pickGenSupportColor('indigo')">🎨</div>
+                            <div class="color-swatch purple" data-color="purple" onclick="pickGenSupportColor('purple')">🎨</div>
+                            <div class="color-swatch green" data-color="green" onclick="pickGenSupportColor('green')">🎨</div>
+                            <div class="color-swatch amber" data-color="amber" onclick="pickGenSupportColor('amber')">🎨</div>
+                            <div class="color-swatch blue" data-color="blue" onclick="pickGenSupportColor('blue')">🎨</div>
+                            <div class="color-swatch red" data-color="red" onclick="pickGenSupportColor('red')">🎨</div>
+                        </div>
+                        <label>Tiêu đề thẻ</label>
+                        <input id="genSupportTitle" placeholder="Hỗ trợ">
+                        <label>Mô tả ngắn</label>
+                        <input id="genSupportSubtitle" placeholder="Zalo & góp ý">
+                        <div class="settings-preview">
+                            <div class="prev-ico" id="genSupportPreviewIco"><i class="fa-solid fa-headset"></i></div>
+                            <div class="prev-text"><b id="genSupportPreviewTitle">Hỗ trợ</b><span id="genSupportPreviewSubtitle">Zalo & góp ý</span></div>
+                        </div>
+                        <div class="mini-actions" style="margin-top:12px;">
+                            <button class="btn-mini-save" onclick="saveSupportCard()">Lưu thẻ Hỗ trợ</button>
+                        </div>
+                        <div id="genSupportMsg" class="hint" style="margin-top:8px;"></div>
+                    </div>
+
+                    <div class="settings-form-card" style="margin-top:16px;">
+                        <h3>Tài khoản</h3>
+                        <p class="hint">Email đang đăng nhập</p>
+                        <div class="settings-preview">
+                            <div class="prev-ico">👤</div>
+                            <div class="prev-text"><b id="genAccountEmail">—</b><span>Quản trị viên</span></div>
+                        </div>
+                    </div>
+
+                    <div class="settings-form-card" style="margin-top:16px;">
+                        <h3>Đổi mật khẩu</h3>
+                        <p class="hint">Mật khẩu mới cần tối thiểu 6 ký tự.</p>
+                        <label>Mật khẩu mới</label>
+                        <input id="genNewPassword" type="password" placeholder="••••••••" autocomplete="new-password">
+                        <label>Nhập lại mật khẩu mới</label>
+                        <input id="genNewPasswordConfirm" type="password" placeholder="••••••••" autocomplete="new-password">
+                        <div class="mini-actions" style="margin-top:12px;">
+                            <button class="btn-mini-save" onclick="changePassword()">Lưu mật khẩu mới</button>
+                        </div>
+                        <div id="genPassMsg" class="hint" style="margin-top:8px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="maintenancePanel" class="hidden">
+            <div class="subj-mgr-head">
+                <h2>🚧 Bảo trì website</h2>
+                <p class="hint">Khi bật, mọi trang thuộc "trang chủ" (Trang chủ, Môn học, Trắc nghiệm, Tài liệu, Sản phẩm, Đăng nhập...) sẽ tự chuyển sang trang bảo trì. Riêng trang <b>quản trị (admin)</b> và trang <b>"Liên hệ Admin"</b> (lien-he.html) vẫn dùng được bình thường để bạn thao tác và học viên vẫn liên hệ được khi cần gấp.</p>
+            </div>
+            <div class="subj-mgr-grid">
+                <div class="subj-mgr-col" style="max-width:520px;">
+                    <div class="settings-form-card">
+                        <div class="mnt-toggle-row">
+                            <div>
+                                <div class="mnt-toggle-label">Bật chế độ bảo trì</div>
+                                <div class="mnt-toggle-sub">Trạng thái hiện tại: <span id="mntStatusPill" class="mnt-status-pill off">Đang hoạt động</span></div>
+                            </div>
+                            <label class="mnt-switch">
+                                <input type="checkbox" id="mntEnabledToggle" onchange="onMntToggleChange()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <label>Lời nhắn hiển thị cho khách (không bắt buộc)</label>
+                        <textarea id="mntMessageInput" rows="3" placeholder="Bọn mình đang nâng cấp để mang lại trải nghiệm tốt hơn. Vui lòng quay lại sau ít phút nhé!"></textarea>
+                        <div class="hint" style="margin-top:2px;">Để trống sẽ dùng lời nhắn mặc định ở trang bảo trì.</div>
+
+                        <div class="mini-actions" style="margin-top:14px;">
+                            <button class="btn-mini-save" onclick="saveMaintenanceSettings()">💾 Lưu thay đổi</button>
+                        </div>
+                        <div id="mntSaveMsg" class="hint" style="margin-top:8px;"></div>
+                    </div>
+
+                    <div class="settings-form-card" style="margin-top:16px;">
+                        <h3>Áp dụng cho những trang nào?</h3>
+                        <p class="hint" style="margin-bottom:10px;">Tự động chuyển sang trang bảo trì:</p>
+                        <ul style="margin:0 0 12px;padding-left:18px;font-size:.84rem;color:var(--gray);line-height:1.8;">
+                            <li>Trang chủ (index.html)</li>
+                            <li>Danh sách môn học, chi tiết môn học</li>
+                            <li>Trắc nghiệm / đề thi thử / bài tập tính toán</li>
+                            <li>Góp ý học viên, Đăng nhập tài khoản</li>
+                        </ul>
+                        <p class="hint" style="margin-bottom:10px;">Vẫn hoạt động bình thường:</p>
+                        <ul style="margin:0;padding-left:18px;font-size:.84rem;color:var(--gray);line-height:1.8;">
+                            <li>Trang quản trị (/admin)</li>
+                            <li>Liên hệ Admin (lien-he.html)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="settingsPanel" class="hidden">
+            <button class="settings-back-btn" onclick="closeSettingsPanel()">← Quay lại</button>
+            <div class="settings-form-card">
+                <h3 id="setFormTitle">Cài đặt</h3>
+                <p class="hint" id="setFormHint">Nội dung này hiển thị ở trang chủ.</p>
+
+                <div id="setFieldsTheme" class="hidden">
+                    <div class="hint" style="margin:0 0 14px;background:var(--green-bg);color:#0f6b3a;padding:10px 12px;border-radius:var(--radius-sm);">
+                        🎨 Áp dụng cho TOÀN BỘ trang chủ &amp; các trang con: khối giới thiệu, menu bên trái, nút bấm, thẻ môn học/tài liệu... Người dùng cần tải lại trang để thấy màu mới.
+                    </div>
+                    <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:150px;">
+                            <label>Màu thương hiệu chính</label>
+                            <input type="color" id="setThemeBrand" value="#4f6bff" style="height:44px; cursor:pointer;" oninput="updateThemePreview()">
+                        </div>
+                        <div style="flex:1; min-width:150px;">
+                            <label>Màu phụ (pha gradient cùng màu chính)</label>
+                            <input type="color" id="setThemeBrand2" value="#8b5cf6" style="height:44px; cursor:pointer;" oninput="updateThemePreview()">
+                        </div>
+                        <div style="flex:1; min-width:150px;">
+                            <label>Màu điểm nhấn (glow trang trí ở khối hero)</label>
+                            <input type="color" id="setThemeAccent2" value="#ff7ab8" style="height:44px; cursor:pointer;" oninput="updateThemePreview()">
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:12px;">
+                        <div style="flex:1; min-width:150px;">
+                            <label>Màu "thành công" (miễn phí, hoàn thành...)</label>
+                            <input type="color" id="setThemeGreen" value="#17b26a" style="height:44px; cursor:pointer;" oninput="updateThemePreview()">
+                        </div>
+                        <div style="flex:1; min-width:150px;">
+                            <label>Màu "cảnh báo / Pro" (giá tiền, huy hiệu Pro...)</label>
+                            <input type="color" id="setThemeAmber" value="#f5a524" style="height:44px; cursor:pointer;" oninput="updateThemePreview()">
+                        </div>
+                        <div style="flex:1; min-width:150px;">
+                            <label>Độ bo góc khối hero (px)</label>
+                            <input type="number" id="setThemeRadius" min="0" max="40" value="24" oninput="updateThemePreview()">
+                        </div>
+                    </div>
+
+                    <div class="hint" style="margin:20px 0 10px; text-transform:uppercase; font-size:.7rem; font-weight:800; letter-spacing:.05em;">Tuỳ chỉnh chi tiết trang chủ</div>
+                    <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:190px;">
+                            <label>Kiểu khối giới thiệu (hero)</label>
+                            <select id="setThemeHeroStyle" onchange="updateThemePreview()">
+                                <option value="gradient">Gradient nổi bật (mặc định)</option>
+                                <option value="minimal">Tối giản, nền phẳng</option>
+                                <option value="dots">Có hoạ tiết chấm bi</option>
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:190px;">
+                            <label>Hiệu ứng khi rê chuột vào thẻ</label>
+                            <select id="setThemeHoverStyle" onchange="updateThemePreview()">
+                                <option value="lift">Nâng lên (mặc định)</option>
+                                <option value="scale">Phóng to nhẹ</option>
+                                <option value="none">Không hiệu ứng</option>
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:190px;">
+                            <label>Bo góc thẻ môn học / tài liệu / thẻ nhanh (px)</label>
+                            <input type="number" id="setThemeCardRadius" min="0" max="32" value="16" oninput="updateThemePreview()">
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:14px;">
+                        <label style="display:flex; align-items:center; gap:9px; font-weight:600;">
+                            <span class="tgl-switch"><input type="checkbox" id="setThemeShowIllustration" checked><span class="tgl-slider"></span></span> Hiện hình minh hoạ SVG trong khối hero
+                        </label>
+                    </div>
+
+                    <div class="hint" style="margin:20px 0 10px; text-transform:uppercase; font-size:.7rem; font-weight:800; letter-spacing:.05em;">Khối "đang ôn tập" (dưới tiêu đề hero)</div>
+                    <label>Kiểu hiển thị</label>
+                    <select id="setThemeSPType" onchange="onThemeSPTypeChange()">
+                        <option value="avatars">Avatar nhóm + số người (mặc định)</option>
+                        <option value="badge">Huy hiệu đơn giản (icon + chữ)</option>
+                        <option value="none">Ẩn hẳn</option>
+                    </select>
+
+                    <div id="setThemeSPAvatars">
+                        <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:10px;">
+                            <div style="flex:1; min-width:170px;">
+                                <label>Số/chữ đậm (vd: 1.240 bạn)</label>
+                                <input id="setThemeSPCount" placeholder="1.240 bạn" oninput="updateThemePreview()">
+                            </div>
+                            <div style="flex:1; min-width:170px;">
+                                <label>Chữ theo sau</label>
+                                <input id="setThemeSPSuffix" placeholder="đang ôn tập tuần này" oninput="updateThemePreview()">
+                            </div>
+                        </div>
+                        <label style="margin-top:10px;">4 avatar tròn (chữ cái + màu)</label>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <div style="display:flex; align-items:center; gap:6px;"><input id="setThemeAvt1Letter" maxlength="1" value="H" style="width:44px; text-align:center;"><input type="color" id="setThemeAvt1Color" value="#4f6bff" style="width:40px; height:38px; padding:2px; cursor:pointer;"></div>
+                            <div style="display:flex; align-items:center; gap:6px;"><input id="setThemeAvt2Letter" maxlength="1" value="L" style="width:44px; text-align:center;"><input type="color" id="setThemeAvt2Color" value="#8b5cf6" style="width:40px; height:38px; padding:2px; cursor:pointer;"></div>
+                            <div style="display:flex; align-items:center; gap:6px;"><input id="setThemeAvt3Letter" maxlength="1" value="M" style="width:44px; text-align:center;"><input type="color" id="setThemeAvt3Color" value="#17b26a" style="width:40px; height:38px; padding:2px; cursor:pointer;"></div>
+                            <div style="display:flex; align-items:center; gap:6px;"><input id="setThemeAvt4Letter" maxlength="1" value="T" style="width:44px; text-align:center;"><input type="color" id="setThemeAvt4Color" value="#f5a524" style="width:40px; height:38px; padding:2px; cursor:pointer;"></div>
+                        </div>
+                    </div>
+
+                    <div id="setThemeSPBadge" class="hidden" style="margin-top:10px;">
+                        <label>Icon (mã lớp Font Awesome)</label>
+                        <input id="setThemeSPBadgeIcon" placeholder="fa-solid fa-star">
+                        <label>Nội dung huy hiệu</label>
+                        <input id="setThemeSPBadgeText" placeholder="4.9/5 từ 320 đánh giá">
+                    </div>
+
+                    <label style="margin-top:12px;">Hiệu ứng chuyển động của khối này</label>
+                    <select id="setThemeSPEffect" onchange="updateThemePreview()">
+                        <option value="none">Không hiệu ứng (mặc định)</option>
+                        <option value="pulse">Nhấp nháy nhẹ (pulse)</option>
+                        <option value="float">Nhấp nhô lên xuống (float)</option>
+                    </select>
+
+                    <div style="margin-top:16px;padding:15px 17px;border:1px dashed var(--border);border-radius:var(--radius);background:var(--bg);">
+                        <div class="hint" style="text-transform:uppercase;font-size:.7rem;font-weight:700;letter-spacing:.05em;margin-bottom:10px;">Xem trước</div>
+                        <div id="setThemePreviewHero" style="padding:22px 24px; overflow:hidden; position:relative;">
+                            <span id="setThemePreviewEyebrow" style="display:inline-flex; align-items:center; gap:6px; font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#fff; padding:5px 12px 5px 8px; border-radius:999px; margin-bottom:10px;">● SNG EDU</span>
+                            <div id="setThemePreviewTitle" style="font-size:1.3rem; font-weight:800; margin-bottom:12px;">Mở kho tài liệu, bắt đầu ôn tập ngay hôm nay</div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <span id="setThemePreviewBtn" style="color:#fff; font-weight:700; font-size:.82rem; padding:9px 16px; border-radius:10px;">Truy cập nhanh</span>
+                                <span id="setThemePreviewPill" style="color:#fff; font-weight:700; font-size:.82rem; padding:9px 16px; border-radius:10px;">Gói Pro</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="setFieldsHero" class="hidden">
+                    <label>Tiêu đề tab trình duyệt (thẻ &lt;title&gt;)</label>
+                    <input id="setHeroPageTitle" placeholder="SNG EDU — Không gian tri thức cộng đồng">
+                    <div class="hint" style="margin:2px 0 10px;">Chữ hiện trên tab trình duyệt và khi chia sẻ link (Google, Zalo, Facebook...). Nếu để trống, web dùng tiêu đề mặc định.</div>
+                    <label>Dòng nhỏ phía trên (eyebrow)</label>
+                    <input id="setHeroEyebrow" placeholder="Mác – Lênin">
+                    <label>Tiêu đề chính</label>
+                    <input id="setHeroTitle" placeholder="Ôn tập trắc nghiệm...">
+                </div>
+
+                <div id="setFieldsTexts" class="hidden">
+                    <label style="margin-top:10px;">Tiêu đề "Truy cập nhanh"</label>
+                    <input id="setTextQuick" placeholder="Truy cập nhanh">
+                    <label style="margin-top:10px;">Tiêu đề "Học phần nổi bật" (trang chủ)</label>
+                    <input id="setTextHomeSubjects" placeholder="Học phần nổi bật">
+                    <label style="margin-top:10px;">Tiêu đề khối "Tài liệu miễn phí nổi bật" (chỉ hiện khi có tài liệu miễn phí được ghim)</label>
+                    <input id="setTextFeaturedDocFree" placeholder="Tài liệu miễn phí nổi bật">
+                    <label style="margin-top:10px;">Tiêu đề khối "Tài liệu trả phí nổi bật" (chỉ hiện khi có tài liệu trả phí được ghim)</label>
+                    <input id="setTextFeaturedDocPaid" placeholder="Tài liệu trả phí nổi bật">
+                    <label style="margin-top:10px;">Tiêu đề khối "Công cụ nổi bật" (chỉ hiện khi có công cụ được ghim)</label>
+                    <input id="setTextFeaturedTool" placeholder="Công cụ nổi bật">
+                    <label style="margin-top:10px;">Tiêu đề khối "Sản phẩm nổi bật" (chỉ hiện khi có sản phẩm được ghim)</label>
+                    <input id="setTextFeaturedProduct" placeholder="Sản phẩm nổi bật">
+                    <label style="margin-top:10px;">Tiêu đề tab "Trắc nghiệm"</label>
+                    <input id="setTextQuiz" placeholder="Học phần đại cương">
+                    <label style="margin-top:10px;">Tiêu đề tab "Tài liệu"</label>
+                    <input id="setTextDoc" placeholder="Tài liệu">
+                    <label style="margin-top:10px;">Tiêu đề tab "Công cụ"</label>
+                    <input id="setTextTool" placeholder="Công cụ">
+                    <label style="margin-top:10px;">Tiêu đề tab "Sản phẩm"</label>
+                    <input id="setTextProduct" placeholder="Sản phẩm">
+                    <div class="hint" style="margin-top:6px;">Để trống ô nào thì trang chủ dùng đúng chữ mặc định như placeholder ở ô đó.</div>
+                </div>
+
+
+                <div id="setFieldsFooter" class="hidden">
+                    <label>Nội dung chân trang</label>
+                    <input id="setFooterText" placeholder="VD: SNG EDU © 2025 – 2026. Để trống nếu không muốn hiện chân trang.">
+                    <div class="hint" style="margin:2px 0 10px;">Dòng chữ này hiện ở chân trang trên TẤT CẢ các trang (trang chủ, danh sách môn học...) — sửa một lần, mọi trang tự cập nhật giống nhau. Để trống thì chân trang sẽ không hiện chữ gì.</div>
+                    <div style="margin-top:16px;padding:15px 17px;border:1px dashed var(--border);border-radius:var(--radius);background:var(--bg);">
+                        <div class="hint" style="text-transform:uppercase;font-size:.7rem;font-weight:700;letter-spacing:.05em;margin-bottom:8px;">Xem trước</div>
+                        <div style="background:var(--navy);border-radius:var(--radius-sm);padding:16px;text-align:center;">
+                            <span id="setFooterPreview" style="color:#9aa1c4;font-size:.85rem;">(chưa có nội dung)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="setFieldsBanner" class="hidden">
+                    <div class="hint" style="margin:0 0 14px;background:var(--green-bg);color:#0f6b3a;padding:10px 12px;border-radius:var(--radius-sm);">
+                        ✅ Banner giờ mở form góp ý ngay trong app — góp ý sẽ vào thẳng mục <b>"Góp ý học viên"</b> ở trang quản trị, không cần link ngoài (Google Form) nữa.
+                    </div>
+                    <label>Nội dung banner</label>
+                    <input id="setBannerText" placeholder="Gặp câu hỏi sai? Click vào đây góp ý giúp tôi!">
+                    <label>Cụm từ cần gạch chân (phải trùng khớp với nội dung ở trên)</label>
+                    <input id="setBannerUnderline" placeholder="Click vào đây">
+
+                    <label>Icon trái</label>
+                    <input id="setBannerIconLeft" placeholder="🔔" maxlength="4" style="max-width:100px;">
+                    <label>Icon phải</label>
+                    <input id="setBannerIconRight" placeholder="👉" maxlength="4" style="max-width:100px;">
+
+                    <label>Màu sắc</label>
+                    <div class="color-swatch-row" id="setBannerColorRow">
+                        <div class="color-swatch amber" data-color="amber" onclick="pickBannerColor('amber')">🎨</div>
+                        <div class="color-swatch blue" data-color="blue" onclick="pickBannerColor('blue')">🎨</div>
+                        <div class="color-swatch green" data-color="green" onclick="pickBannerColor('green')">🎨</div>
+                        <div class="color-swatch red" data-color="red" onclick="pickBannerColor('red')">🎨</div>
+                        <div class="color-swatch purple" data-color="purple" onclick="pickBannerColor('purple')">🎨</div>
+                        <div class="color-swatch indigo" data-color="indigo" onclick="pickBannerColor('indigo')">🎨</div>
+                    </div>
+
+                    <label>Kiểu dáng</label>
+                    <div class="acct-filter-chips" id="setBannerShapeRow">
+                        <button type="button" class="acct-chip" data-shape="pill" onclick="pickBannerShape('pill')">💊 Viên nhộng</button>
+                        <button type="button" class="acct-chip" data-shape="rounded" onclick="pickBannerShape('rounded')">▢ Bo góc</button>
+                        <button type="button" class="acct-chip" data-shape="square" onclick="pickBannerShape('square')">⬛ Vuông</button>
+                    </div>
+
+                    <label>Kích thước</label>
+                    <div class="acct-filter-chips" id="setBannerSizeRow">
+                        <button type="button" class="acct-chip" data-size="sm" onclick="pickBannerSize('sm')">🔹 Nhỏ</button>
+                        <button type="button" class="acct-chip" data-size="md" onclick="pickBannerSize('md')">🔸 Vừa</button>
+                        <button type="button" class="acct-chip" data-size="lg" onclick="pickBannerSize('lg')">🔶 Lớn</button>
+                    </div>
+
+                    <label>Hiệu ứng</label>
+                    <div class="acct-filter-chips" id="setBannerEffectRow">
+                        <button type="button" class="acct-chip" data-effect="subtle" onclick="pickBannerEffect('subtle')">✨ Nhẹ nhàng</button>
+                        <button type="button" class="acct-chip" data-effect="pulse" onclick="pickBannerEffect('pulse')">💓 Nhấp nháy</button>
+                        <button type="button" class="acct-chip" data-effect="shake" onclick="pickBannerEffect('shake')">📳 Rung lắc</button>
+                        <button type="button" class="acct-chip" data-effect="none" onclick="pickBannerEffect('none')">⏸️ Đứng yên</button>
+                    </div>
+
+                    <div class="hint" style="margin:12px 0 0;">Banner này hiện ở trang danh sách môn học (mon-hoc.html), phía dưới danh sách chương.</div>
+                    <div style="margin-top:14px;padding:15px 17px;border:1px dashed var(--border);border-radius:var(--radius);background:var(--bg);">
+                        <div class="hint" style="text-transform:uppercase;font-size:.7rem;font-weight:700;letter-spacing:.05em;margin-bottom:8px;">Xem trước</div>
+                        <div style="background:var(--navy);border-radius:var(--radius-sm);padding:20px;text-align:center;">
+                            <span id="setBannerPreviewWrap" style="display:inline-flex;align-items:center;gap:10px;justify-content:center;background:#241d10;border:1.5px solid #b8860b;border-radius:999px;padding:13px 22px;">
+                                <span id="setBannerPreviewIconLeft" style="font-size:16px;">🔔</span>
+                                <span id="setBannerPreview" style="color:#f5c065;font-weight:800;font-size:.78rem;letter-spacing:.3px;text-transform:uppercase;">Gặp câu hỏi sai? <u>Click vào đây</u> góp ý giúp tôi!</span>
+                                <span id="setBannerPreviewIconRight" style="font-size:15px;">👉</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="setFieldsPromo" class="hidden">
+                    <label style="display:flex;align-items:center;gap:9px;">
+                        <span class="tgl-switch"><input type="checkbox" id="setPromoEnabled" onchange="updatePromoPreview()"><span class="tgl-slider"></span></span> Bật hiển thị banner
+                    </label>
+                    <label>Nội dung banner</label>
+                    <textarea id="setPromoMessage" rows="3" placeholder="Người dùng Premium ghi nhớ hiệu quả hơn gấp 3 lần. Ưu đãi gói năm chỉ còn 790.000đ sẽ sớm kết thúc." oninput="updatePromoPreview()"></textarea>
+                    <div class="hint" style="margin:2px 0 10px;">Bấm vào banner sẽ mở luôn popup "Nâng cấp Pro" hiện có trên trang chủ.</div>
+
+                    <div style="display:flex;gap:14px;flex-wrap:wrap;">
+                        <div style="flex:1;min-width:140px;">
+                            <label>Tổng số suất</label>
+                            <input type="number" id="setPromoSlotsTotal" min="0" placeholder="100" oninput="updatePromoPreview()">
+                        </div>
+                        <div style="flex:1;min-width:180px;">
+                            <label>Tính suất đã bán từ ngày</label>
+                            <input type="datetime-local" id="setPromoStartAt" oninput="updatePromoPreview()">
+                        </div>
+                    </div>
+                    <div class="hint" style="margin:2px 0 10px;">
+                        "Số suất còn lại" giờ <b>tự động trừ theo đơn Gói thành viên đã thanh toán thành công thật</b> kể từ mốc thời gian ở ô "Tính suất đã bán từ ngày" — không cần admin gõ tay/cập nhật thủ công nữa.
+                        Để trống ô này thì mặc định tính từ lúc bạn lưu cấu hình này. Để trống hoặc để 0 ở "Tổng số suất" nếu không muốn hiện cụm "còn X/Y suất".
+                        <span id="setPromoSoldNote"></span>
+                    </div>
+
+                    <label>Thời điểm kết thúc ưu đãi</label>
+                    <input type="datetime-local" id="setPromoEndAt" oninput="updatePromoPreview()">
+                    <div class="hint" style="margin:2px 0 10px;">Banner tự đếm ngược tới thời điểm này rồi tự ẩn. Đổi giờ này sẽ khiến banner hiện lại kể cả với người đã từng bấm đóng.</div>
+
+                    <div style="margin-top:14px;padding:15px 17px;border:1px dashed var(--border);border-radius:var(--radius);background:var(--bg);">
+                        <div class="hint" style="text-transform:uppercase;font-size:.7rem;font-weight:700;letter-spacing:.05em;margin-bottom:8px;">Xem trước</div>
+                        <div style="background:var(--navy);border-radius:var(--radius-sm);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+                            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                                <span style="font-size:1.2rem;">👑</span>
+                                <span id="setPromoPreviewMsg" style="color:#f0f1f6;font-size:.85rem;font-weight:600;">Người dùng Premium ghi nhớ hiệu quả hơn gấp 3 lần...</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                                <span id="setPromoPreviewSlots" style="background:#232a4d;color:#a5a4ff;border:1px solid #7b93ff;border-radius:99px;padding:5px 12px;font-size:.75rem;font-weight:800;white-space:nowrap;">còn 12/100 suất</span>
+                                <span id="setPromoPreviewTimer" style="background:#3a1414;color:#ff8787;border:1px solid #ff8787;border-radius:99px;padding:5px 12px;font-size:.75rem;font-weight:800;white-space:nowrap;">1n 03:23:58</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="setFieldsAnnounce" class="hidden">
+                    <label style="display:flex;align-items:center;gap:9px;">
+                        <span class="tgl-switch"><input type="checkbox" id="setAnnounceEnabled" onchange="updateAnnouncePreview()"><span class="tgl-slider"></span></span> Bật hiển thị thông báo
+                    </label>
+                    <div class="hint" style="margin:2px 0 10px;">Popup hiện giữa màn hình ngay khi người dùng vào trang chủ (mỗi khi tải lại trang, trừ khi họ đang trong thời gian bấm "Ẩn tạm").</div>
+
+                    <label>Tiêu đề</label>
+                    <input type="text" id="setAnnounceTitle" placeholder="Thông báo" oninput="updateAnnouncePreview()">
+
+                    <label>Nội dung thông báo</label>
+                    <textarea id="setAnnounceMessage" rows="4" placeholder="Hệ thống sẽ bảo trì từ 23h đến 1h sáng mai, mong các bạn thông cảm." oninput="updateAnnouncePreview()"></textarea>
+
+                    <label>Ẩn tạm trong (giờ)</label>
+                    <input type="number" id="setAnnounceHideHours" min="1" step="1" placeholder="2" oninput="updateAnnouncePreview()">
+                    <div class="hint" style="margin:2px 0 10px;">Số giờ áp dụng cho nút "Ẩn trong X giờ" — người dùng bấm nút này sẽ không thấy lại thông báo cho tới khi hết thời gian này. Nút "Đóng" chỉ đóng cho lần xem hiện tại, lần vào lại vẫn sẽ thấy thông báo. Đổi nội dung/tiêu đề sẽ khiến thông báo hiện lại kể cả với người đã bấm "Ẩn tạm" trước đó.</div>
+
+                    <div style="margin-top:14px;padding:15px 17px;border:1px dashed var(--border);border-radius:var(--radius);background:var(--bg);">
+                        <div class="hint" style="text-transform:uppercase;font-size:.7rem;font-weight:700;letter-spacing:.05em;margin-bottom:8px;">Xem trước</div>
+                        <div style="background:#fff;border-radius:18px;padding:26px 20px 20px;text-align:center;box-shadow:0 14px 36px -14px rgba(20,22,45,.28);position:relative;overflow:hidden;max-width:320px;margin:0 auto;">
+                            <div style="position:absolute;top:0;left:18px;right:18px;height:4px;border-radius:0 0 6px 6px;background:linear-gradient(90deg,var(--accent),#8b7cf6);"></div>
+                            <div style="width:52px;height:52px;border-radius:50%;margin:4px auto 12px;background:linear-gradient(135deg,var(--accent),#8b7cf6);color:#fff;font-size:1.2rem;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px -6px rgba(79,107,255,.5);"><i class="fa-solid fa-bullhorn"></i></div>
+                            <div style="font-weight:800;color:var(--text);font-size:.98rem;margin-bottom:7px;" id="setAnnouncePreviewTitle">Thông báo</div>
+                            <div style="color:var(--gray);font-size:.83rem;line-height:1.55;white-space:pre-line;margin-bottom:16px;" id="setAnnouncePreviewMsg">Hệ thống sẽ bảo trì từ 23h đến 1h sáng mai...</div>
+                            <div style="display:flex;flex-direction:column;gap:8px;">
+                                <span style="background:linear-gradient(135deg,var(--accent),#8b7cf6);color:#fff;border-radius:11px;padding:10px 14px;font-size:.8rem;font-weight:700;box-shadow:0 8px 18px -6px rgba(79,107,255,.45);">Đóng</span>
+                                <span style="background:transparent;color:var(--gray);border:1px solid var(--border);border-radius:11px;padding:10px 14px;font-size:.8rem;font-weight:700;" id="setAnnouncePreviewHideBtn">Ẩn trong 2 giờ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="setFieldsCard" class="hidden">
+                    <label>Icon (mã lớp Font Awesome)</label>
+                    <input id="setCardIcon" placeholder="fa-solid fa-list-check">
+                    <div class="hint" style="margin:2px 0 0;">Xem mã icon tại <a href="https://fontawesome.com/search" target="_blank" rel="noopener">fontawesome.com/search</a>, copy đúng class (vd: fa-solid fa-briefcase).</div>
+                    <label>Màu icon</label>
+                    <div class="color-swatch-row" id="setColorRow">
+                        <div class="color-swatch indigo" data-color="indigo" onclick="pickSetColor('indigo')">🎨</div>
+                        <div class="color-swatch purple" data-color="purple" onclick="pickSetColor('purple')">🎨</div>
+                        <div class="color-swatch green" data-color="green" onclick="pickSetColor('green')">🎨</div>
+                        <div class="color-swatch amber" data-color="amber" onclick="pickSetColor('amber')">🎨</div>
+                        <div class="color-swatch blue" data-color="blue" onclick="pickSetColor('blue')">🎨</div>
+                        <div class="color-swatch red" data-color="red" onclick="pickSetColor('red')">🎨</div>
+                    </div>
+                    <label>Tiêu đề thẻ</label>
+                    <input id="setCardTitle" placeholder="Ôn tập trắc nghiệm">
+                    <label>Mô tả ngắn</label>
+                    <input id="setCardSubtitle" placeholder="Chọn học phần">
+                    <label>Đường dẫn (link)</label>
+                    <input id="setCardLink" placeholder="chon-mon.html">
+                    <div class="settings-preview">
+                        <div class="prev-ico" id="setPreviewIco"><i class="fa-solid fa-list-check"></i></div>
+                        <div class="prev-text"><b id="setPreviewTitle">Ôn tập trắc nghiệm</b><span id="setPreviewSubtitle">Chọn học phần</span></div>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:10px;margin-top:18px;">
+                    <button class="btn-primary" onclick="saveSiteSetting()">Lưu thay đổi</button>
+                    <span id="setSaveMsg" style="align-self:center;font-size:.85rem;color:var(--green);"></span>
+                </div>
+            </div>
+
+            <div id="quickLinksSection">
+            <div class="subj-mgr-head" style="margin-top:30px;">
+                <h2>⚡ Truy cập nhanh</h2>
+                <p class="hint">Các thẻ hiển thị ở mục "Truy cập nhanh" trên trang chủ, ngay bên dưới khối giới thiệu ở trên. Kéo thả để đổi thứ tự, thêm/sửa/xóa/đổi tên thoải mái.</p>
+            </div>
+            <div class="subj-mgr-grid">
+                <div class="subj-mgr-col" style="max-width:460px;">
+                    <div class="subj-mgr-col-head">
+                        <h4>Danh sách thẻ</h4>
+                        <button class="side-add" onclick="openQuickLinkForm()">+ Thêm thẻ</button>
+                    </div>
+                    <div id="quickLinkList" class="side-list subj-mgr-list"></div>
+                </div>
+
+                <div class="subj-mgr-col">
+                    <div id="quickLinkForm" class="mini-form">
+                        <div id="quickLinkFormTitle" class="mini-form-title">Thêm thẻ</div>
+                        <label>Icon (mã lớp Font Awesome)</label>
+                        <input id="qlIcon" placeholder="fa-solid fa-list-check">
+                        <div class="hint" style="margin:2px 0 0;">Xem mã icon tại <a href="https://fontawesome.com/search" target="_blank" rel="noopener">fontawesome.com/search</a>, copy đúng class (vd: fa-solid fa-briefcase).</div>
+                        <label style="margin-top:10px;">Màu icon</label>
+                        <div class="color-swatch-row" id="qlColorRow">
+                            <div class="color-swatch indigo" data-color="indigo" onclick="pickQlColor('indigo')">🎨</div>
+                            <div class="color-swatch purple" data-color="purple" onclick="pickQlColor('purple')">🎨</div>
+                            <div class="color-swatch green" data-color="green" onclick="pickQlColor('green')">🎨</div>
+                            <div class="color-swatch amber" data-color="amber" onclick="pickQlColor('amber')">🎨</div>
+                            <div class="color-swatch blue" data-color="blue" onclick="pickQlColor('blue')">🎨</div>
+                            <div class="color-swatch red" data-color="red" onclick="pickQlColor('red')">🎨</div>
+                        </div>
+                        <label>Tiêu đề thẻ</label>
+                        <input id="qlTitle" placeholder="Ôn tập trắc nghiệm">
+                        <label>Mô tả ngắn</label>
+                        <input id="qlSubtitle" placeholder="Chọn học phần">
+                        <label>Bấm vào thẻ sẽ đi tới</label>
+                        <select id="qlLink">
+                            <option value="home">Trang chủ</option>
+                            <option value="doc">Tài liệu</option>
+                            <option value="quiz">Trắc nghiệm</option>
+                            <option value="tool">Công cụ</option>
+                            <option value="product">Sản phẩm</option>
+                            <option value="account">Tài khoản</option>
+                            <option value="history">Lịch sử mua hàng</option>
+                            <option value="support">Hỗ trợ</option>
+                            <option value="__custom">Đường dẫn khác (URL/file)…</option>
+                        </select>
+                        <input id="qlLinkCustom" class="hidden" placeholder="https://... hoặc ten-file.html" style="margin-top:8px;">
+                        <div class="settings-preview">
+                            <div class="prev-ico" id="qlPreviewIco"><i class="fa-solid fa-list-check"></i></div>
+                            <div class="prev-text"><b id="qlPreviewTitle">Tiêu đề</b><span id="qlPreviewSubtitle">Mô tả</span></div>
+                        </div>
+                        <div class="mini-actions">
+                            <button class="btn-mini-save" onclick="saveQuickLink()">Lưu</button>
+                            <button class="btn-mini-cancel" onclick="closeQuickLinkForm()">Hủy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <div id="mainAppArea" class="hidden">
+        <div class="context-bar" id="contextBar"></div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="list" onclick="switchTab('list')">📖 Danh sách câu hỏi</button>
+            <button class="tab" data-tab="single" onclick="switchTab('single')">➕ Thêm câu hỏi</button>
+            <button class="tab" data-tab="bulk" onclick="switchTab('bulk')">📋 Dán nhiều câu hỏi</button>
+            <button class="tab" data-tab="export" onclick="switchTab('export')">⬇️ Xuất file</button>
+        </div>
+
+        <div id="tab-list" class="tab-panel">
+            <div class="panel">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+                    <h3 style="margin:0;">Câu hỏi trong đề đang chọn <span id="qListCount" class="q-count-badge"></span></h3>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button class="btn-primary hidden" id="mergeQBtn" onclick="openMergeModal()" style="padding:6px 12px;font-size:.8rem;">🔀 Tổng hợp câu hỏi</button>
+                        <button class="btn-danger" id="deleteAllQBtn" onclick="deleteAllQuestions()">🗑️ Xóa tất cả câu hỏi trong đề này</button>
+                    </div>
+                </div>
+                <div id="qList"><div class="empty-state">Chọn một môn học và một chương/đề ở thanh bên trái để xem câu hỏi.</div></div>
+            </div>
+        </div>
+
+        <div id="tab-single" class="tab-panel hidden">
+            <div class="panel">
+                <h3 id="singleFormTitle">Thêm 1 câu hỏi</h3>
+                <p class="hint">Câu hỏi sẽ được lưu vào môn và chương đang chọn ở thanh bên trái.</p>
+                <div class="content-order-row">
+                    <div class="content-order-col">
+                        <label>Nội dung câu hỏi</label>
+                        <textarea id="qContent" rows="2" placeholder="Nhập nội dung câu hỏi..."></textarea>
+                    </div>
+                    <div class="order-col">
+                        <label>Số TT</label>
+                        <input type="number" id="qOrderNo" min="1" placeholder="Tự động" title="Để trống = tự động xếp cuối danh sách. Nhập số để chèn vào đúng vị trí đó.">
+                    </div>
+                </div>
+                <p class="hint" style="margin-top:4px;">Số thứ tự: để trống = tự động xếp cuối danh sách; nhập số để chèn câu hỏi vào đúng vị trí đó (các câu phía sau tự dời xuống).</p>
+                <label>Đáp án</label>
+                <p class="opt-hint" style="margin:-6px 0 4px;">Bấm nút tròn cạnh đáp án đúng — thẻ tương ứng sẽ tự chuyển sang màu xanh.</p>
+                <div id="optionsForm"></div>
+                <label>Giải thích (tùy chọn)</label>
+                <textarea id="qExplain" rows="2" placeholder="Giải thích vì sao đáp án đúng..."></textarea>
+                <div style="display:flex;gap:10px;margin-top:14px;">
+                    <button class="btn-primary" id="singleSaveBtn" onclick="saveSingleQuestion()">Lưu câu hỏi</button>
+                    <button class="btn-ghost hidden" id="cancelEditBtn" onclick="cancelEdit()">Hủy sửa</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-bulk" class="tab-panel hidden">
+            <div class="panel">
+                <h3>Dán nhiều câu hỏi cùng lúc</h3>
+                <div class="callout">
+                    <b>Định dạng:</b> <b>Câu 1: Nội dung...</b>, các dòng tiếp theo <b>A. đáp án</b> ... <b>D. đáp án</b>,
+                    đánh dấu đáp án đúng bằng dấu <b>*</b> phía trước (vd <b>*B. đáp án</b>), dòng <b>Gt: giải thích</b> không bắt buộc.
+                    Mỗi câu cách nhau 1 dòng trống.
+                </div>
+
+                <textarea id="bulkText" rows="10" placeholder="Câu 1: Thủ đô của Việt Nam là?
+A. TP.HCM
+*B. Hà Nội
+C. Đà Nẵng
+D. Huế
+Gt: Hà Nội là thủ đô của Việt Nam."></textarea>
+
+                <div class="or-divider">hoặc tải file lên</div>
+
+                <div class="section-label">📎 Tải lên file (.html, .htm, .txt, .md) — chọn được nhiều file cùng lúc</div>
+                <div class="file-drop" id="fileDrop">
+                    <input type="file" id="bulkFileInput" accept=".html,.htm,.txt,.md" multiple onchange="handleBulkFiles(this.files)">
+                    <div class="file-drop-icon">📂</div>
+                    <div class="file-drop-title">Bấm để chọn file, hoặc kéo-thả file vào đây</div>
+                    <div class="file-drop-sub">Tự động nhận diện và trích câu hỏi/đáp án từ file quiz .html hoặc file .txt/.md theo đúng định dạng ở trên. Nội dung trích được sẽ tự động thêm vào ô phía trên.</div>
+                </div>
+                <div id="fileReadSummary"></div>
+
+                <div style="display:flex;gap:10px;align-items:center;margin-top:18px;flex-wrap:wrap;">
+                    <button class="btn-primary" onclick="bulkImport()">Nạp tất cả</button>
+                    <button class="btn-ghost" onclick="clearBulkText()">Xóa nội dung</button>
+                    <button class="btn-danger" onclick="deleteAllQuestions()">🗑️ Xóa hết câu hỏi cũ trong đề này (trước khi nạp lại)</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-export" class="tab-panel hidden">
+            <div class="panel">
+                <h3>Xuất câu hỏi ra file (.txt)</h3>
+                <p class="hint">Tải câu hỏi về máy dưới dạng file văn bản, dùng để lưu trữ, chia sẻ hoặc nạp lại qua tab "Dán nhiều câu hỏi".</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+                    <button class="btn-ghost" onclick="exportChapterFile()">⬇️ Xuất đề đang chọn (.txt)</button>
+                    <button class="btn-ghost" onclick="exportSubjectFile()">⬇️ Xuất cả môn học (.txt)</button>
+                </div>
+            </div>
+        </div>
+        </div>
+
+<!-- ================= KHO TÀI KHOẢN SẢN PHẨM (tab lớn riêng) ================= -->
+<div id="stockManagerPanel" class="hidden">
+    <div class="subj-mgr-head with-icon">
+        <div class="smh-ico">🔑</div>
+        <div>
+            <h2>Kho tài khoản</h2>
+            <p class="hint">Chọn 1 sản phẩm bên trái, dán mỗi tài khoản 1 dòng, ví dụ: <code>email@gmail.com:matkhau123</code>. Khi khách thanh toán sản phẩm đó thành công, hệ thống <b>tự động lấy 1 dòng còn trống</b>, đánh dấu đã bán và hiển thị cho khách ở trang chi tiết sản phẩm — không cần thao tác thủ công.</p>
+        </div>
+    </div>
+    <div class="subj-mgr-grid stock-grid">
+        <div class="subj-mgr-col">
+            <div class="subj-mgr-col-head">
+                <h4><i class="fa-solid fa-bag-shopping"></i> Sản phẩm</h4>
+            </div>
+            <div id="stockProductList" class="side-list subj-mgr-list"></div>
+        </div>
+        <div class="subj-mgr-col">
+            <div id="stockEmptyState" class="stock-empty-state">
+                <div class="stock-empty-ico"><i class="fa-solid fa-box-open"></i></div>
+                <p>Chọn 1 sản phẩm bên trái để quản lý kho tài khoản</p>
+            </div>
+            <div id="stockDetailWrap" class="hidden">
+                <div class="subj-mgr-col-head">
+                    <h4 id="stockProductTitle"></h4>
+                </div>
+                <div id="stockVariantTabs" class="stock-variant-tabs"></div>
+                <div class="stock-add-box">
+                    <textarea id="stockAddTextarea" rows="4" placeholder="email1@gmail.com:matkhau1&#10;email2@gmail.com:matkhau2&#10;..."></textarea>
+                    <div class="stock-add-row">
+                        <button class="btn-primary" onclick="submitAddStock()"><i class="fa-solid fa-plus"></i> Thêm vào kho</button>
+                    </div>
+                </div>
+                <div class="stock-stats-row">
+                    <span class="stock-stat available"><i class="fa-solid fa-circle-check"></i> Còn trống: <b id="stockAvailCount">0</b></span>
+                    <span class="stock-stat sold"><i class="fa-solid fa-cart-shopping"></i> Đã bán: <b id="stockSoldCount">0</b></span>
+                </div>
+                <div class="stock-tabs">
+                    <button class="stock-tab selected" data-tab="available" onclick="switchStockTab('available')"><i class="fa-solid fa-box"></i> Còn trống</button>
+                    <button class="stock-tab" data-tab="sold" onclick="switchStockTab('sold')"><i class="fa-solid fa-receipt"></i> Đã bán</button>
+                </div>
+                <div class="stock-list" id="stockList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+    </main>
+</div>
+
+<!-- ================= CONFIRM MODAL ================= -->
+<div id="confirmOverlay" class="hidden">
+    <div class="confirm-box">
+        <div class="confirm-icon">⚠️</div>
+        <h4 id="confirmTitle">Xác nhận xóa</h4>
+        <p id="confirmMessage"></p>
+        <div class="confirm-actions">
+            <button class="btn-confirm-cancel" onclick="closeConfirm()">Hủy</button>
+            <button class="btn-confirm-danger" id="confirmDangerBtn">Xóa</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= RESET GIAO DỊCH (nhập mật khẩu xác nhận) ================= -->
+<div id="resetStatsOverlay" class="hidden">
+    <div class="confirm-box">
+        <div class="confirm-icon">🗑️</div>
+        <h4>Reset tất cả giao dịch</h4>
+        <p>Thao tác này sẽ xoá vĩnh viễn toàn bộ lịch sử đơn hàng và đưa số liệu thống kê (doanh thu, số đơn...) về 0.</p>
+        <p class="rs-note">✅ Tài khoản khách hàng, gói Pro đang dùng và tài liệu đã mua <b>KHÔNG</b> bị ảnh hưởng — chỉ số liệu thống kê bị xoá.</p>
+        <label style="display:block;text-align:left;font-size:.8rem;font-weight:700;color:var(--gray);margin-top:4px;">Nhập mật khẩu xác nhận</label>
+        <input id="resetStatsPwd" type="password" placeholder="••••••••" autocomplete="off">
+        <p id="resetStatsErr"></p>
+        <div class="confirm-actions">
+            <button class="btn-confirm-cancel" onclick="closeResetStatsModal()">Hủy</button>
+            <button class="btn-confirm-danger" id="resetStatsConfirmBtn" onclick="submitResetStats()">Xoá toàn bộ</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= XOÁ DỮ LIỆU LƯỢT TRUY CẬP (nhập mật khẩu xác nhận) ================= -->
+<div id="resetVisitsOverlay" class="hidden">
+    <div class="confirm-box">
+        <div class="confirm-icon">🗑️</div>
+        <h4>Xoá dữ liệu lượt truy cập</h4>
+        <p>Thao tác này sẽ xoá vĩnh viễn toàn bộ lịch sử lượt truy cập website và đưa số liệu (tổng lượt, khách duy nhất...) về 0.</p>
+        <p class="rs-note">✅ Tài khoản khách hàng, gói Pro, đơn hàng và tài liệu <b>KHÔNG</b> bị ảnh hưởng — chỉ số liệu lượt truy cập bị xoá.</p>
+        <label style="display:block;text-align:left;font-size:.8rem;font-weight:700;color:var(--gray);margin-top:4px;">Nhập mật khẩu xác nhận</label>
+        <input id="resetVisitsPwd" type="password" placeholder="••••••••" autocomplete="off">
+        <p id="resetVisitsErr"></p>
+        <div class="confirm-actions">
+            <button class="btn-confirm-cancel" onclick="closeResetVisitsModal()">Hủy</button>
+            <button class="btn-confirm-danger" id="resetVisitsConfirmBtn" onclick="submitResetVisits()">Xoá toàn bộ</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MERGE (TỔNG HỢP) MODAL ================= -->
+<div id="mergeOverlay" class="hidden">
+    <div class="merge-box">
+        <h4>🔀 Tổng hợp câu hỏi</h4>
+        <p>Copy câu hỏi từ các chương được chọn vào đề <b id="mergeTargetLabel"></b>. Có thể chỉnh số lượng câu lấy từ mỗi chương. Câu hỏi ở chương nguồn vẫn được giữ nguyên, không bị xóa hay di chuyển.</p>
+        <div class="merge-select-all-row">
+            <div class="msa-links">
+                <a onclick="mergeSetAll(true)">Chọn tất cả</a>
+                <a onclick="mergeSetAll(false)">Bỏ chọn tất cả</a>
+            </div>
+            <span class="merge-total-badge" id="mergeTotalBadge">Tổng: 0 câu</span>
+        </div>
+        <div class="merge-source-list" id="mergeSourceList"></div>
+        <label class="merge-clear-row">
+            <span class="tgl-switch"><input type="checkbox" id="mergeClearFirst"><span class="tgl-slider"></span></span>
+            Xóa câu hỏi hiện có trong đề này trước khi tổng hợp (tránh trùng/cộng dồn)
+        </label>
+        <div class="merge-actions">
+            <button class="btn-merge-cancel" onclick="closeMergeModal()">Hủy</button>
+            <button class="btn-primary" id="mergeConfirmBtn" onclick="runMergeQuestions()">Tổng hợp ngay</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= TÀI KHOẢN: ĐỔI TÊN / ĐẶT MẬT KHẨU ================= -->
+<div id="acctFormOverlay" class="hidden">
+    <div class="acct-form-box" id="acctFormBox"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>
